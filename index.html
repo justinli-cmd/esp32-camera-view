@@ -98,6 +98,42 @@
       gap: 10px;
       flex-wrap: wrap;
     }
+
+    /* Direction controls: command queue only until the device is wired. */
+    .control-note {
+      margin-top: 9px;
+      line-height: 1.5;
+    }
+    .dpad {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      width: min(100%, 350px);
+      margin: 16px auto 8px;
+    }
+    .dpad button {
+      margin: 0;
+      min-height: 56px;
+      font-size: 17px;
+      font-weight: 600;
+      touch-action: manipulation;
+    }
+    .dpad .up { grid-column: 2; grid-row: 1; }
+    .dpad .left { grid-column: 1; grid-row: 2; }
+    .dpad .center {
+      grid-column: 2;
+      grid-row: 2;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #aebdd0;
+      font-size: 23px;
+    }
+    .dpad .right { grid-column: 3; grid-row: 2; }
+    .dpad .down { grid-column: 2; grid-row: 3; }
+    .command-ok { color: #89dfb1; }
+    .command-error { color: #ffaeae; }
+
   </style>
 </head>
 
@@ -163,6 +199,24 @@
       </div>
 
     </div>
+
+    <div class="panel">
+      <strong>方向控制</strong>
+      <div class="sub control-note">
+        按一下發送一筆指令到 Supabase，20 秒後過期。
+        目前僅測試雲端傳遞；ESP32-S3 尚未領取指令，馬達也尚未接線。
+      </div>
+      <div class="dpad" aria-label="攝影機方向控制">
+        <button class="up" data-direction="up" onclick="sendDirection('up')" disabled>↑ 上</button>
+        <button class="left" data-direction="left" onclick="sendDirection('left')" disabled>← 左</button>
+        <span class="center" aria-hidden="true">●</span>
+        <button class="right" data-direction="right" onclick="sendDirection('right')" disabled>右 →</button>
+        <button class="down" data-direction="down" onclick="sendDirection('down')" disabled>↓ 下</button>
+      </div>
+      <div class="status" id="commandStatus" role="status" aria-live="polite">
+        請先輸入觀看密碼並開始觀看，再發送方向指令。
+      </div>
+    </div>
   </div>
 
   <script>
@@ -170,6 +224,82 @@
       "https://sbyexakcynddnbsixtgm.supabase.co/functions/v1/camera-view";
 
     const INTERVAL_MS = 20000;
+
+    const COMMAND_API =
+      "https://sbyexakcynddnbsixtgm.supabase.co/functions/v1/camera-command";
+    const DIRECTION_NAMES = {
+      up: "上", down: "下", left: "左", right: "右"
+    };
+    let viewerAuthorized = false;
+    let commandBusy = false;
+    let lastCommandTime = 0;
+
+    const commandStatus = document.getElementById("commandStatus");
+
+    function setDirectionButtons(disabled) {
+      document.querySelectorAll("[data-direction]").forEach(
+        button => { button.disabled = disabled; }
+      );
+    }
+
+    function showCommandStatus(message, isError = false) {
+      commandStatus.textContent = message;
+      commandStatus.className = isError
+        ? "status command-error" : "status command-ok";
+    }
+
+    async function sendDirection(direction) {
+      if (!Object.prototype.hasOwnProperty.call(DIRECTION_NAMES, direction)) return;
+
+      if (!viewToken || !viewerAuthorized) {
+        showCommandStatus("請先輸入觀看密碼並成功載入照片。", true);
+        return;
+      }
+      if (commandBusy || Date.now() - lastCommandTime < 900) return;
+
+      commandBusy = true;
+      lastCommandTime = Date.now();
+      setDirectionButtons(true);
+      showCommandStatus("正在送出「" + DIRECTION_NAMES[direction] + "」指令...");
+
+      try {
+        const response = await fetch(COMMAND_API, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-view-token": viewToken
+          },
+          body: JSON.stringify({ direction }),
+          cache: "no-store"
+        });
+        const data = await response.json();
+
+        if (!response.ok || !data.ok || !data.queued) {
+          if (response.status === 401 || data.error === "unauthorized") {
+            viewerAuthorized = false;
+            viewToken = "";
+            throw new Error("觀看密碼驗證失敗，請重新登入。");
+          }
+          if (response.status === 429 || data.error === "queue_busy") {
+            throw new Error("待處理指令已滿，請稍後再試。");
+          }
+          throw new Error(data.error || "HTTP " + response.status);
+        }
+
+        const id = data.command?.id ?? "?";
+        showCommandStatus(
+          "已排入 Supabase 指令 #" + id +
+          "（" + DIRECTION_NAMES[direction] +
+          "）。此時僅確認雲端接收，尚不代表馬達已旋轉。"
+        );
+      } catch (error) {
+        showCommandStatus("指令發送失敗：" + error.message, true);
+      } finally {
+        commandBusy = false;
+        setDirectionButtons(!viewerAuthorized);
+      }
+    }
+
 
     let viewToken = "";
     let timer = null;
@@ -196,6 +326,8 @@
         document.getElementById("token");
 
       viewToken = input.value.trim();
+      viewerAuthorized = false;
+      setDirectionButtons(true);
 
       if (!viewToken) {
         setStatus("請先輸入觀看密碼");
@@ -240,6 +372,9 @@
           );
         }
 
+        viewerAuthorized = true;
+        setDirectionButtons(false);
+
         // Force a fresh image request
         const imageURL = new URL(data.image_url);
 
@@ -272,6 +407,8 @@
 
         if (error.message === "unauthorized") {
           viewToken = "";
+          viewerAuthorized = false;
+          setDirectionButtons(true);
           if (timer) clearInterval(timer);
           timer = null;
           setStatus("觀看密碼錯誤，請重新輸入");
