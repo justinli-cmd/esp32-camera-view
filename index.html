@@ -1,0 +1,295 @@
+
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+
+  <title>ESP32 4G 攝影機</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 20px;
+      background: #101827;
+      color: white;
+      font-family: Arial, sans-serif;
+    }
+
+    .container {
+      max-width: 750px;
+      margin: auto;
+    }
+
+    h2 {
+      margin-bottom: 8px;
+    }
+
+    .sub {
+      color: #aebdd0;
+      font-size: 14px;
+    }
+
+    .panel {
+      background: #1d293b;
+      padding: 18px;
+      border-radius: 14px;
+      margin-top: 18px;
+    }
+
+    input {
+      width: 100%;
+      padding: 13px;
+      border-radius: 8px;
+      border: 1px solid #52637b;
+      background: #111c2d;
+      color: white;
+      font-size: 16px;
+    }
+
+    button {
+      padding: 13px 18px;
+      border: 0;
+      border-radius: 8px;
+      background: #198f72;
+      color: white;
+      font-size: 15px;
+      cursor: pointer;
+      margin-top: 12px;
+    }
+
+    button:disabled {
+      opacity: 0.5;
+    }
+
+    .screen {
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      background: #060b14;
+      border-radius: 12px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+      margin-top: 14px;
+    }
+
+    .screen img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .status {
+      color: #b5c4d6;
+      font-size: 14px;
+      margin-top: 12px;
+      overflow-wrap: anywhere;
+    }
+
+    .buttons {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+
+    <h2>ESP32 4G 攝影機</h2>
+
+    <div class="sub">
+      OV5640 + A7670SA + Supabase
+    </div>
+
+    <div class="panel">
+
+      <label for="token">
+        觀看密碼
+      </label>
+
+      <input
+        type="password"
+        id="token"
+        placeholder="輸入 CAMERA_VIEW_TOKEN"
+        autocomplete="off"
+      >
+
+      <div class="buttons">
+        <button id="start" onclick="startViewer()">
+          開始觀看
+        </button>
+
+        <button onclick="loadPhoto()">
+          立即更新
+        </button>
+      </div>
+
+      <div class="status" id="status">
+        請輸入觀看密碼
+      </div>
+
+    </div>
+
+    <div class="panel">
+
+      <strong>最新攝影機畫面</strong>
+
+      <div class="screen">
+        <img
+          id="photo"
+          alt="攝影機最新照片"
+          referrerpolicy="no-referrer"
+          hidden
+        >
+        <span id="empty">尚未載入照片</span>
+      </div>
+
+      <div class="status" id="updated">
+        尚無畫面
+      </div>
+
+      <div class="sub">
+        每 20 秒自動檢查一次最新照片。
+        本頁顯示定時拍攝的照片，不是即時影片。
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    const API =
+      "https://sbyexakcynddnbsixtgm.supabase.co/functions/v1/camera-view";
+
+    const INTERVAL_MS = 20000;
+
+    let viewToken = "";
+    let timer = null;
+    let busy = false;
+
+    const statusElement =
+      document.getElementById("status");
+
+    const photo =
+      document.getElementById("photo");
+
+    const empty =
+      document.getElementById("empty");
+
+    const updated =
+      document.getElementById("updated");
+
+    function setStatus(message) {
+      statusElement.textContent = message;
+    }
+
+    async function startViewer() {
+      const input =
+        document.getElementById("token");
+
+      viewToken = input.value.trim();
+
+      if (!viewToken) {
+        setStatus("請先輸入觀看密碼");
+        return;
+      }
+
+      // Clear the input after loading it
+      input.value = "";
+
+      if (timer) clearInterval(timer);
+
+      await loadPhoto();
+
+      timer = setInterval(
+        loadPhoto,
+        INTERVAL_MS
+      );
+    }
+
+    async function loadPhoto() {
+      if (!viewToken || busy) return;
+
+      if (document.hidden) return;
+
+      busy = true;
+      setStatus("正在取得最新照片...");
+
+      try {
+        const response = await fetch(API, {
+          method: "GET",
+          headers: {
+            "x-view-token": viewToken
+          },
+          cache: "no-store"
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || !data.ok) {
+          throw new Error(
+            data.error || "HTTP " + response.status
+          );
+        }
+
+        // Force a fresh image request
+        const imageURL = new URL(data.image_url);
+
+        imageURL.searchParams.set(
+          "cacheNonce",
+          String(Date.now())
+        );
+
+        photo.onload = () => {
+          photo.hidden = false;
+          empty.hidden = true;
+
+          updated.textContent =
+            "上次成功讀取：" +
+            new Date().toLocaleString("zh-TW");
+
+          setStatus("照片讀取成功");
+        };
+
+        photo.onerror = () => {
+          setStatus("照片載入失敗，稍後重試");
+        };
+
+        photo.src = imageURL.toString();
+
+      } catch (error) {
+        setStatus(
+          "讀取失敗：" + error.message
+        );
+
+        if (error.message === "unauthorized") {
+          viewToken = "";
+          if (timer) clearInterval(timer);
+          timer = null;
+          setStatus("觀看密碼錯誤，請重新輸入");
+        }
+      } finally {
+        busy = false;
+      }
+    }
+
+    // Refresh immediately after reopening the tab
+    document.addEventListener(
+      "visibilitychange",
+      () => {
+        if (!document.hidden && viewToken) {
+          loadPhoto();
+        }
+      }
+    );
+  </script>
+</body>
+</html>
