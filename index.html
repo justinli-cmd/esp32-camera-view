@@ -319,7 +319,10 @@
       const opPhoto = data.operation_photo;
       if (opPhoto && String(opPhoto.operation_id) === String(operationId) && opPhoto.image_url && opPhoto.path) {
         status("motorStatus", "馬達後照片已上傳，正在下載並顯示…", "good");
-        await showPhoto(data, operationId);
+        const displayed = await showPhoto(data, operationId);
+        if (!displayed) {
+          throw new Error("收到的照片不是本次 operation_id 對應的照片，拒絕解鎖");
+        }
         return { data, photoPath: opPhoto.path };
       }
       await new Promise(resolve => setTimeout(resolve, 1200));
@@ -475,13 +478,34 @@
     $("closeControlBtn").disabled = true;
     status("controlStatus", "正在關閉角度調整並恢復定時拍攝…", "warn");
     try {
-      await command("close_control");
-      await command("set_interval", { seconds: intervalSeconds });
-      mode = "scheduled";
+      const closeResult = await command("close_control");
+      const closeId = extractOperationId(closeResult);
+      if (!closeId) throw new Error("close_control 回應缺少 operation_id");
+
+      // close_control is asynchronous: wait until the device reports close_done
+      // and camera-command-v5 changes the server mode back to timed.
+      const closeStarted = Date.now();
+      let closed = false;
+      while (Date.now() - closeStarted < 180000) {
+        const stateData = await refreshView(closeId);
+        const op = extractOperation(stateData);
+        const serverMode = stateData.mode || stateData.state?.mode;
+        if (op?.status === "failed") {
+          throw new Error(op.error_message || "裝置回報關閉控制失敗");
+        }
+        if (serverMode === "timed" && op?.status === "done") {
+          closed = true;
+          break;
+        }
+        await new Promise(resolve => setTimeout(resolve, 1200));
+      }
+      if (!closed) throw new Error("等待裝置完成 close_control 逾時");
+
+      mode = "timed";
       $("motorPanel").classList.add("hidden");
       activeOperationId = null;
       await refreshView();
-      status("controlStatus", "角度調整已關閉，已恢復每 " + intervalSeconds + " 秒定時拍攝。", "good");
+      status("controlStatus", "裝置已完成關閉控制，伺服器模式已回到 timed；原本每 " + intervalSeconds + " 秒的拍攝排程繼續。", "good");
       $("openControlBtn").disabled = false;
       disableSchedule(false);
     } catch (e) {
