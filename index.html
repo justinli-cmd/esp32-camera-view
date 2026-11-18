@@ -1,432 +1,520 @@
-
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport"
-        content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="referrer" content="no-referrer">
-
-  <title>ESP32 4G 攝影機</title>
-
+  <meta name="theme-color" content="#101827">
+  <title>第二台 4G 攝影機 V5</title>
   <style>
-    * {
-      box-sizing: border-box;
-    }
-
-    body {
-      margin: 0;
-      padding: 20px;
-      background: #101827;
-      color: white;
-      font-family: Arial, sans-serif;
-    }
-
-    .container {
-      max-width: 750px;
-      margin: auto;
-    }
-
-    h2 {
-      margin-bottom: 8px;
-    }
-
-    .sub {
-      color: #aebdd0;
-      font-size: 14px;
-    }
-
-    .panel {
-      background: #1d293b;
-      padding: 18px;
-      border-radius: 14px;
-      margin-top: 18px;
-    }
-
-    input {
-      width: 100%;
-      padding: 13px;
-      border-radius: 8px;
-      border: 1px solid #52637b;
-      background: #111c2d;
-      color: white;
-      font-size: 16px;
-    }
-
-    button {
-      padding: 13px 18px;
-      border: 0;
-      border-radius: 8px;
-      background: #198f72;
-      color: white;
-      font-size: 15px;
-      cursor: pointer;
-      margin-top: 12px;
-    }
-
-    button:disabled {
-      opacity: 0.5;
-    }
-
-    .screen {
-      width: 100%;
-      aspect-ratio: 4 / 3;
-      background: #060b14;
-      border-radius: 12px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      overflow: hidden;
-      margin-top: 14px;
-    }
-
-    .screen img {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-    }
-
-    .status {
-      color: #b5c4d6;
-      font-size: 14px;
-      margin-top: 12px;
-      overflow-wrap: anywhere;
-    }
-
-    .buttons {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-
-    /* Direction controls: command queue only until the device is wired. */
-    .control-note {
-      margin-top: 9px;
-      line-height: 1.5;
-    }
-    .dpad {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 10px;
-      width: min(100%, 350px);
-      margin: 16px auto 8px;
-    }
-    .dpad button {
-      margin: 0;
-      min-height: 56px;
-      font-size: 17px;
-      font-weight: 600;
-      touch-action: manipulation;
-    }
-    .dpad .up { grid-column: 2; grid-row: 1; }
-    .dpad .left { grid-column: 1; grid-row: 2; }
-    .dpad .center {
-      grid-column: 2;
-      grid-row: 2;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #aebdd0;
-      font-size: 23px;
-    }
-    .dpad .right { grid-column: 3; grid-row: 2; }
-    .dpad .down { grid-column: 2; grid-row: 3; }
-    .command-ok { color: #89dfb1; }
-    .command-error { color: #ffaeae; }
-
+    :root { color-scheme: dark; --bg:#101827; --panel:#1d293b; --muted:#aebdd0; --green:#198f72; --blue:#2878c8; --red:#b94b55; }
+    * { box-sizing:border-box; }
+    body { margin:0; padding:16px; background:var(--bg); color:#fff; font-family:Arial,"Noto Sans TC",sans-serif; }
+    .container { max-width:760px; margin:auto; }
+    h1 { font-size:24px; margin:4px 0 6px; }
+    h2 { font-size:18px; margin:0 0 12px; }
+    .sub,.muted { color:var(--muted); font-size:13px; line-height:1.55; }
+    .panel { background:var(--panel); padding:16px; border-radius:14px; margin-top:14px; }
+    input,select { width:100%; padding:12px; border:1px solid #52637b; border-radius:8px; background:#111c2d; color:white; font-size:16px; }
+    button { border:0; border-radius:9px; padding:12px 15px; background:var(--green); color:white; font-size:15px; font-weight:600; cursor:pointer; touch-action:manipulation; }
+    button.secondary { background:#34445d; }
+    button.blue { background:var(--blue); }
+    button.danger { background:var(--red); }
+    button:disabled { opacity:.42; cursor:not-allowed; }
+    .row { display:flex; gap:9px; flex-wrap:wrap; align-items:center; }
+    .row > button { flex:1; }
+    .mode-row { display:grid; grid-template-columns:1fr 1fr; gap:9px; }
+    .mode-row button { background:#34445d; }
+    .mode-row button.active { background:var(--green); outline:2px solid #8ce2c4; }
+    .screen { width:100%; aspect-ratio:4/3; background:#060b14; border-radius:12px; display:flex; justify-content:center; align-items:center; overflow:hidden; margin-top:12px; }
+    .screen img { width:100%; height:100%; object-fit:contain; }
+    .screen span { color:var(--muted); padding:16px; text-align:center; }
+    .status { margin-top:10px; font-size:14px; line-height:1.5; overflow-wrap:anywhere; color:#d4deeb; }
+    .good { color:#89dfb1; } .warn { color:#ffd27d; } .bad { color:#ffaaaa; }
+    .stats { display:grid; grid-template-columns:1fr 1fr; gap:9px; margin-top:12px; }
+    .stat { background:#111c2d; border-radius:9px; padding:11px; min-width:0; }
+    .stat .label { color:var(--muted); font-size:12px; }
+    .stat .value { margin-top:5px; font-size:16px; font-weight:700; overflow-wrap:anywhere; }
+    .dpad { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:9px; width:min(100%,340px); margin:14px auto 8px; }
+    .dpad button { min-height:58px; margin:0; font-size:17px; }
+    .dpad .up { grid-column:2; grid-row:1; }
+    .dpad .left { grid-column:1; grid-row:2; }
+    .dpad .center { grid-column:2; grid-row:2; display:flex; align-items:center; justify-content:center; color:var(--muted); font-size:23px; }
+    .dpad .right { grid-column:3; grid-row:2; }
+    .dpad .down { grid-column:2; grid-row:3; }
+    .hidden { display:none !important; }
+    .pill { display:inline-block; padding:4px 9px; border-radius:99px; background:#34445d; color:#dce8f5; font-size:12px; }
+    .divider { height:1px; background:#3a4a60; margin:14px 0; }
+    .small { font-size:12px; }
+    @media(max-width:430px) { body{padding:11px} .panel{padding:13px} h1{font-size:21px} }
   </style>
 </head>
-
 <body>
-  <div class="container">
+<div class="container">
+  <h1>第二台 4G 攝影機</h1>
+  <div class="sub">ESP32-S3 N16R8 · OV5640 · SIMCOM A7670SA · Supabase V5</div>
 
-    <h2>ESP32 4G 攝影機</h2>
+  <section class="panel">
+    <h2>連線與觀看驗證</h2>
+    <label for="token" class="sub">觀看密碼（CAMERA_VIEW_TOKEN）</label>
+    <input id="token" type="password" placeholder="輸入觀看密碼" autocomplete="off">
+    <div class="row" style="margin-top:10px">
+      <button id="startBtn">開始連線</button>
+      <button id="refreshBtn" class="secondary" disabled>立即更新照片</button>
+    </div>
+    <div id="connectionStatus" class="status">尚未連線</div>
+  </section>
 
-    <div class="sub">
-      OV5640 + A7670SA + Supabase
+  <section class="panel">
+    <div class="row" style="justify-content:space-between">
+      <h2 style="margin:0">最新攝影機畫面</h2>
+      <span id="modeBadge" class="pill">尚未連線</span>
+    </div>
+    <div class="screen">
+      <img id="photo" alt="最新攝影機照片" referrerpolicy="no-referrer" hidden>
+      <span id="empty">登入後載入最新照片</span>
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="label">最後照片拍攝時間</div><div class="value" id="capturedAt">尚無資料</div></div>
+      <div class="stat"><div class="label">距離上次畫面更新</div><div class="value" id="age">--</div></div>
+      <div class="stat"><div class="label">最後成功顯示時間</div><div class="value" id="displayedAt">尚無資料</div></div>
+      <div class="stat"><div class="label">目前操作狀態</div><div class="value" id="operationStatus">待機</div></div>
+    </div>
+    <div id="photoStatus" class="status">尚未取得照片</div>
+  </section>
+
+  <section class="panel">
+    <h2>固定拍攝模式</h2>
+    <div class="sub">平時由攝影機依照設定間隔自行拍照。切換至角度調整時會先暫停定時拍攝。</div>
+    <div class="mode-row" style="margin-top:12px">
+      <button id="interval10" class="active" disabled>每 10 秒</button>
+      <button id="interval30" disabled>每 30 秒</button>
+    </div>
+    <div id="scheduleStatus" class="status">登入後可設定拍攝間隔</div>
+  </section>
+
+  <section class="panel">
+    <h2>角度調整模式</h2>
+    <div class="sub">按「打開馬達」後，系統會暫停定時拍攝，先拍攝並顯示一張進入控制模式前的照片。照片確認顯示後才開放方向按鈕。</div>
+    <div class="row" style="margin-top:12px">
+      <button id="openControlBtn" class="blue" disabled>打開馬達</button>
+      <button id="closeControlBtn" class="danger" disabled>關閉馬達</button>
     </div>
 
-    <div class="panel">
-
-      <label for="token">
-        觀看密碼
-      </label>
-
-      <input
-        type="password"
-        id="token"
-        placeholder="輸入 CAMERA_VIEW_TOKEN"
-        autocomplete="off"
-      >
-
-      <div class="buttons">
-        <button id="start" onclick="startViewer()">
-          開始觀看
-        </button>
-
-        <button onclick="loadPhoto()">
-          立即更新
-        </button>
+    <div id="motorPanel" class="hidden">
+      <div class="divider"></div>
+      <div class="sub">移動幅度</div>
+      <div class="mode-row" style="margin-top:8px">
+        <button id="smallMove" class="active">小範圍</button>
+        <button id="largeMove">雙倍幅度</button>
       </div>
+      <div class="sub" style="margin-top:8px">小範圍沿用原本步數；雙倍幅度使用兩倍步數。實際步數由 ESP32 韌體設定。</div>
 
-      <div class="status" id="status">
-        請輸入觀看密碼
-      </div>
-
-    </div>
-
-    <div class="panel">
-
-      <strong>最新攝影機畫面</strong>
-
-      <div class="screen">
-        <img
-          id="photo"
-          alt="攝影機最新照片"
-          referrerpolicy="no-referrer"
-          hidden
-        >
-        <span id="empty">尚未載入照片</span>
-      </div>
-
-      <div class="status" id="updated">
-        尚無畫面
-      </div>
-
-      <div class="sub">
-        每 20 秒自動檢查一次最新照片。
-        本頁顯示定時拍攝的照片，不是即時影片。
-      </div>
-
-    </div>
-
-    <div class="panel">
-      <strong>方向控制</strong>
-      <div class="sub control-note">
-        按一下發送一筆指令到 Supabase，20 秒後過期。
-        目前僅測試雲端傳遞；ESP32-S3 尚未領取指令，馬達也尚未接線。
-      </div>
       <div class="dpad" aria-label="攝影機方向控制">
-        <button class="up" data-direction="up" onclick="sendDirection('up')" disabled>↑ 上</button>
-        <button class="left" data-direction="left" onclick="sendDirection('left')" disabled>← 左</button>
-        <span class="center" aria-hidden="true">●</span>
-        <button class="right" data-direction="right" onclick="sendDirection('right')" disabled>右 →</button>
-        <button class="down" data-direction="down" onclick="sendDirection('down')" disabled>↓ 下</button>
+        <button class="up" disabled title="MG90S 尚未接線">↑ 上</button>
+        <button class="left" id="leftBtn" disabled>← 左</button>
+        <span class="center">●</span>
+        <button class="right" id="rightBtn" disabled>右 →</button>
+        <button class="down" disabled title="MG90S 尚未接線">↓ 下</button>
       </div>
-      <div class="status" id="commandStatus" role="status" aria-live="polite">
-        請先輸入觀看密碼並開始觀看，再發送方向指令。
-      </div>
+      <div class="sub small">目前只啟用步進馬達左右軸。上下 MG90S 尚未接線，因此暫不開放。</div>
+      <div id="motorStatus" class="status">等待控制模式初始化</div>
+      <div id="latencyStatus" class="status">尚無馬達操作紀錄</div>
     </div>
-  </div>
+    <div id="controlStatus" class="status">馬達控制尚未開啟</div>
+  </section>
 
-  <script>
-    const API =
-      "https://sbyexakcynddnbsixtgm.supabase.co/functions/v1/camera-view";
+  <section class="panel">
+    <h2>系統資訊</h2>
+    <div id="systemStatus" class="status">尚未取得 V5 狀態</div>
+  </section>
+</div>
 
-    const INTERVAL_MS = 20000;
+<script>
+(() => {
+  "use strict";
 
-    const COMMAND_API =
-      "https://sbyexakcynddnbsixtgm.supabase.co/functions/v1/camera-command";
-    const DIRECTION_NAMES = {
-      up: "上", down: "下", left: "左", right: "右"
-    };
-    let viewerAuthorized = false;
-    let commandBusy = false;
-    let lastCommandTime = 0;
+  const BASE = "https://sbyexakcynddnbsixtgm.supabase.co/functions/v1/";
+  const VIEW_API = BASE + "camera-view-v5";
+  const COMMAND_API = BASE + "camera-command-v5";
 
-    const commandStatus = document.getElementById("commandStatus");
+  const $ = id => document.getElementById(id);
+  let viewToken = "";
+  let connected = false;
+  let mode = "scheduled";
+  let intervalSeconds = 10;
+  let moveSize = "small";
+  let busy = false;
+  let controlReady = false;
+  let activeOperationId = null;
+  let currentPhotoPath = null;
+  let lastCapturedAt = null;
+  let lastDisplayedAt = null;
+  let lastPhotoAgeAtFetch = null;
+  let photoAgeTimer = null;
+  let pollTimer = null;
+  let pollBusy = false;
+  let lastPhotoKey = "";
 
-    function setDirectionButtons(disabled) {
-      document.querySelectorAll("[data-direction]").forEach(
-        button => { button.disabled = disabled; }
-      );
-    }
+  const fmt = value => {
+    if (!value) return "尚無資料";
+    const d = new Date(value);
+    return Number.isNaN(d.getTime()) ? String(value) : d.toLocaleString("zh-TW", { hour12:false });
+  };
+  const setText = (id, value) => { $(id).textContent = value; };
+  const status = (id, message, kind="") => {
+    $(id).textContent = message;
+    $(id).className = "status " + kind;
+  };
+  const disableSchedule = disabled => {
+    $("interval10").disabled = disabled;
+    $("interval30").disabled = disabled;
+  };
+  const setMoveButtons = enabled => {
+    $("leftBtn").disabled = !enabled;
+    $("rightBtn").disabled = !enabled;
+  };
+  const setModeBadge = text => setText("modeBadge", text);
 
-    function showCommandStatus(message, isError = false) {
-      commandStatus.textContent = message;
-      commandStatus.className = isError
-        ? "status command-error" : "status command-ok";
-    }
-
-    async function sendDirection(direction) {
-      if (!Object.prototype.hasOwnProperty.call(DIRECTION_NAMES, direction)) return;
-
-      if (!viewToken || !viewerAuthorized) {
-        showCommandStatus("請先輸入觀看密碼並成功載入照片。", true);
-        return;
+  async function api(path, options={}) {
+    const response = await fetch(path, {
+      cache: "no-store",
+      ...options,
+      headers: {
+        ...(options.headers || {}),
+        "x-view-token": viewToken
       }
-      if (commandBusy || Date.now() - lastCommandTime < 900) return;
-
-      commandBusy = true;
-      lastCommandTime = Date.now();
-      setDirectionButtons(true);
-      showCommandStatus("正在送出「" + DIRECTION_NAMES[direction] + "」指令...");
-
-      try {
-        const response = await fetch(COMMAND_API, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-view-token": viewToken
-          },
-          body: JSON.stringify({ direction }),
-          cache: "no-store"
-        });
-        const data = await response.json();
-
-        if (!response.ok || !data.ok || !data.queued) {
-          if (response.status === 401 || data.error === "unauthorized") {
-            viewerAuthorized = false;
-            viewToken = "";
-            throw new Error("觀看密碼驗證失敗，請重新登入。");
-          }
-          if (response.status === 429 || data.error === "queue_busy") {
-            throw new Error("待處理指令已滿，請稍後再試。");
-          }
-          throw new Error(data.error || "HTTP " + response.status);
-        }
-
-        const id = data.command?.id ?? "?";
-        showCommandStatus(
-          "已排入 Supabase 指令 #" + id +
-          "（" + DIRECTION_NAMES[direction] +
-          "）。此時僅確認雲端接收，尚不代表馬達已旋轉。"
-        );
-      } catch (error) {
-        showCommandStatus("指令發送失敗：" + error.message, true);
-      } finally {
-        commandBusy = false;
-        setDirectionButtons(!viewerAuthorized);
-      }
+    });
+    let data;
+    try { data = await response.json(); }
+    catch (_) { throw new Error("伺服器回應不是有效 JSON（HTTP " + response.status + "）"); }
+    if (!response.ok || data.ok === false) {
+      throw new Error(data.error || ("HTTP " + response.status));
     }
+    return data;
+  }
 
+  async function command(action, fields={}) {
+    return api(COMMAND_API, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action, ...fields })
+    });
+  }
 
-    let viewToken = "";
-    let timer = null;
-    let busy = false;
+  function extractOperationId(data) {
+    return data.operation?.id ??
+      data.operation?.operation_id ??
+      data.operation_id ??
+      data.command?.id ??
+      data.id ?? null;
+  }
 
-    const statusElement =
-      document.getElementById("status");
+  function extractOperation(data) {
+    return data.operation || data.state?.operation || null;
+  }
 
-    const photo =
-      document.getElementById("photo");
-
-    const empty =
-      document.getElementById("empty");
-
-    const updated =
-      document.getElementById("updated");
-
-    function setStatus(message) {
-      statusElement.textContent = message;
+  function renderState(data) {
+    if (data.mode) mode = data.mode;
+    if (Number(data.interval_seconds) === 10 || Number(data.interval_seconds) === 30) {
+      intervalSeconds = Number(data.interval_seconds);
     }
+    $("interval10").classList.toggle("active", intervalSeconds === 10);
+    $("interval30").classList.toggle("active", intervalSeconds === 30);
+    setModeBadge(mode === "control" ? "角度調整模式" : "固定拍攝模式");
 
-    async function startViewer() {
-      const input =
-        document.getElementById("token");
-
-      viewToken = input.value.trim();
-      viewerAuthorized = false;
-      setDirectionButtons(true);
-
-      if (!viewToken) {
-        setStatus("請先輸入觀看密碼");
-        return;
-      }
-
-      // Clear the input after loading it
-      input.value = "";
-
-      if (timer) clearInterval(timer);
-
-      await loadPhoto();
-
-      timer = setInterval(
-        loadPhoto,
-        INTERVAL_MS
-      );
-    }
-
-    async function loadPhoto() {
-      if (!viewToken || busy) return;
-
-      if (document.hidden) return;
-
-      busy = true;
-      setStatus("正在取得最新照片...");
-
-      try {
-        const response = await fetch(API, {
-          method: "GET",
-          headers: {
-            "x-view-token": viewToken
-          },
-          cache: "no-store"
-        });
-
-        const data = await response.json();
-
-        if (!response.ok || !data.ok) {
-          throw new Error(
-            data.error || "HTTP " + response.status
-          );
-        }
-
-        viewerAuthorized = true;
-        setDirectionButtons(false);
-
-        // Force a fresh image request
-        const imageURL = new URL(data.image_url);
-
-        imageURL.searchParams.set(
-          "cacheNonce",
-          String(Date.now())
-        );
-
-        photo.onload = () => {
-          photo.hidden = false;
-          empty.hidden = true;
-
-          updated.textContent =
-            "上次成功讀取：" +
-            new Date().toLocaleString("zh-TW");
-
-          setStatus("照片讀取成功");
-        };
-
-        photo.onerror = () => {
-          setStatus("照片載入失敗，稍後重試");
-        };
-
-        photo.src = imageURL.toString();
-
-      } catch (error) {
-        setStatus(
-          "讀取失敗：" + error.message
-        );
-
-        if (error.message === "unauthorized") {
-          viewToken = "";
-          viewerAuthorized = false;
-          setDirectionButtons(true);
-          if (timer) clearInterval(timer);
-          timer = null;
-          setStatus("觀看密碼錯誤，請重新輸入");
-        }
-      } finally {
-        busy = false;
-      }
-    }
-
-    // Refresh immediately after reopening the tab
-    document.addEventListener(
-      "visibilitychange",
-      () => {
-        if (!document.hidden && viewToken) {
-          loadPhoto();
-        }
-      }
+    const op = extractOperation(data);
+    const activeStatus = op?.status || data.active_status || "idle";
+    setText("operationStatus", activeStatus);
+    setText("systemStatus",
+      "服務：" + (data.service || "camera-view-v5") +
+      " · 版本：" + (data.version ?? "V5") +
+      " · 模式：" + mode +
+      " · 拍攝間隔：" + intervalSeconds + " 秒" +
+      (data.server_time ? " · 伺服器：" + fmt(data.server_time) : "")
     );
-  </script>
+  }
+
+  function updateAge() {
+    if (lastCapturedAt) {
+      const seconds = Math.max(0, Math.floor((Date.now() - lastCapturedAt.getTime()) / 1000));
+      setText("age", seconds + " 秒");
+    }
+  }
+
+  async function showPhoto(data, expectedOperationId=null) {
+    const image = data.operation_photo || data.image || {};
+    const imageUrl = data.operation_photo?.image_url || data.image_url || image.url;
+    const photoPath = data.operation_photo?.path || image.path || null;
+    const captured = data.operation_photo?.captured_at || image.captured_at || image.uploaded_at || null;
+    const operationPhotoId = data.operation_photo?.operation_id ?? null;
+
+    if (!imageUrl) return false;
+    if (expectedOperationId && String(operationPhotoId) !== String(expectedOperationId)) return false;
+
+    const key = String(operationPhotoId || "") + "|" + String(photoPath || imageUrl) + "|" + String(captured || "");
+    if (key === lastPhotoKey && !$("photo").hidden) return true;
+
+    const url = new URL(imageUrl);
+    url.searchParams.set("v5_refresh", String(Date.now()));
+
+    await new Promise((resolve, reject) => {
+      const img = $("photo");
+      const timeout = setTimeout(() => reject(new Error("照片載入逾時")), 20000);
+      img.onload = () => { clearTimeout(timeout); resolve(); };
+      img.onerror = () => { clearTimeout(timeout); reject(new Error("照片下載失敗")); };
+      img.src = url.toString();
+    });
+
+    $("photo").hidden = false;
+    $("empty").hidden = true;
+    lastPhotoKey = key;
+    lastDisplayedAt = new Date();
+    if (captured) {
+      const d = new Date(captured);
+      lastCapturedAt = Number.isNaN(d.getTime()) ? null : d;
+      setText("capturedAt", fmt(captured));
+    } else if (image.uploaded_at) {
+      setText("capturedAt", fmt(image.uploaded_at));
+    }
+    setText("displayedAt", fmt(lastDisplayedAt));
+    if (typeof image.age_seconds_at_response === "number") {
+      lastPhotoAgeAtFetch = image.age_seconds_at_response;
+    }
+    updateAge();
+    status("photoStatus", "照片已下載並顯示" + (expectedOperationId ? "；正在向伺服器確認這張操作後照片" : ""), "good");
+    return true;
+  }
+
+  async function refreshView(operationId=null) {
+    const url = new URL(VIEW_API);
+    if (operationId) url.searchParams.set("operation_id", operationId);
+    const data = await api(url.toString());
+    renderState(data);
+    return data;
+  }
+
+  async function loadLatestPhoto() {
+    if (!connected || pollBusy || document.hidden) return;
+    pollBusy = true;
+    try {
+      const data = await refreshView();
+      await showPhoto(data);
+      status("connectionStatus", "V5 雲端連線正常", "good");
+    } catch (e) {
+      status("photoStatus", "更新照片失敗：" + e.message, "warn");
+    } finally {
+      pollBusy = false;
+    }
+  }
+
+  async function pollOperationPhoto(operationId, timeoutMs=180000) {
+    const start = Date.now();
+    while (Date.now() - start < timeoutMs) {
+      const data = await refreshView(operationId);
+      const op = extractOperation(data);
+      const opStatus = op?.status || data.active_status || "等待裝置";
+      status("motorStatus", "操作 #" + operationId + " · " + opStatus);
+      if (opStatus === "failed") throw new Error(op?.error || "裝置回報操作失敗");
+      const opPhoto = data.operation_photo;
+      if (opPhoto && String(opPhoto.operation_id) === String(operationId) && opPhoto.image_url && opPhoto.path) {
+        status("motorStatus", "馬達後照片已上傳，正在下載並顯示…", "good");
+        await showPhoto(data, operationId);
+        return { data, photoPath: opPhoto.path };
+      }
+      await new Promise(resolve => setTimeout(resolve, 1200));
+    }
+    throw new Error("等待裝置完成操作及上傳照片逾時");
+  }
+
+  async function confirmDisplayed(operationId, photoPath) {
+    const result = await command("display_confirm", {
+      operation_id: operationId,
+      photo_path: photoPath
+    });
+    if (result.unlock !== true) throw new Error("伺服器尚未確認照片顯示，控制保持鎖定");
+    return result;
+  }
+
+  async function waitForControlEntryPhoto(operationId) {
+    const result = await pollOperationPhoto(operationId, 180000);
+    await confirmDisplayed(operationId, result.photoPath);
+    controlReady = true;
+    setMoveButtons(true);
+    status("controlStatus", "進入控制模式的當下照片已顯示；現在可以調整角度。", "good");
+  }
+
+  async function startViewer() {
+    const input = $("token");
+    viewToken = input.value.trim();
+    if (!viewToken) {
+      status("connectionStatus", "請輸入觀看密碼", "bad");
+      return;
+    }
+    input.value = "";
+    $("startBtn").disabled = true;
+    try {
+      const data = await refreshView();
+      connected = true;
+      $("refreshBtn").disabled = false;
+      disableSchedule(false);
+      $("openControlBtn").disabled = false;
+      await showPhoto(data);
+      status("connectionStatus", "已連線至 camera-view-v5", "good");
+      status("scheduleStatus", "目前拍攝間隔：" + intervalSeconds + " 秒");
+      if (pollTimer) clearInterval(pollTimer);
+      pollTimer = setInterval(loadLatestPhoto, 4000);
+      if (photoAgeTimer) clearInterval(photoAgeTimer);
+      photoAgeTimer = setInterval(updateAge, 1000);
+    } catch (e) {
+      connected = false;
+      status("connectionStatus", "連線失敗：" + e.message, "bad");
+    } finally {
+      $("startBtn").disabled = false;
+    }
+  }
+
+  async function setIntervalMode(seconds) {
+    if (!connected || busy || mode === "control") return;
+    busy = true;
+    disableSchedule(true);
+    try {
+      await command("set_interval", { seconds });
+      intervalSeconds = seconds;
+      status("scheduleStatus", "已送出每 " + seconds + " 秒拍攝設定；等待裝置套用。", "good");
+      await refreshView();
+    } catch (e) {
+      status("scheduleStatus", "設定失敗：" + e.message, "bad");
+    } finally {
+      busy = false;
+      disableSchedule(mode === "control");
+    }
+  }
+
+  async function openControl() {
+    if (!connected || busy || mode === "control") return;
+    busy = true;
+    controlReady = false;
+    setMoveButtons(false);
+    $("openControlBtn").disabled = true;
+    $("closeControlBtn").disabled = true;
+    status("controlStatus", "正在暫停定時拍攝並要求裝置拍攝進入控制模式的當下照片…", "warn");
+    try {
+      const data = await command("open_control");
+      activeOperationId = extractOperationId(data);
+      if (!activeOperationId) throw new Error("open_control 回應缺少 operation_id");
+      mode = "control";
+      $("motorPanel").classList.remove("hidden");
+      $("closeControlBtn").disabled = false;
+      disableSchedule(true);
+      await waitForControlEntryPhoto(activeOperationId);
+    } catch (e) {
+      status("controlStatus", "開啟控制模式失敗：" + e.message, "bad");
+      setMoveButtons(false);
+      $("openControlBtn").disabled = false;
+    } finally {
+      busy = false;
+    }
+  }
+
+  async function move(direction) {
+    if (!connected || busy || !controlReady || mode !== "control") return;
+    busy = true;
+    controlReady = false;
+    setMoveButtons(false);
+    const start = performance.now();
+    status("motorStatus", "已送出 " + (direction === "left" ? "向左" : "向右") + " 指令；等待裝置回報馬達開始…", "warn");
+    status("latencyStatus", "正在計算本次操作總延遲…");
+    try {
+      const data = await command("move", { direction, size: moveSize });
+      activeOperationId = extractOperationId(data);
+      if (!activeOperationId) throw new Error("move 回應缺少 operation_id");
+      const started = performance.now();
+      status("motorStatus", "指令已進入佇列，等待馬達完成、拍照及上傳…");
+      const result = await pollOperationPhoto(activeOperationId, 180000);
+      const beforeConfirm = performance.now();
+      await confirmDisplayed(activeOperationId, result.photoPath);
+      const totalMs = Math.round(performance.now() - start);
+      const deviceToPhotoMs = Math.round(beforeConfirm - started);
+      status("latencyStatus", "本次總延遲（按箭頭至照片顯示並確認）：" + totalMs + " ms；指令送出至照片顯示：" + deviceToPhotoMs + " ms。", "good");
+      status("motorStatus", "馬達操作完成，移動後照片已顯示；下一次操作已解鎖。", "good");
+      controlReady = true;
+      setMoveButtons(true);
+    } catch (e) {
+      status("motorStatus", "操作未完成：" + e.message + "。方向按鈕保持鎖定，請使用重新取得照片或重試。", "bad");
+      controlReady = false;
+      setMoveButtons(false);
+    } finally {
+      busy = false;
+    }
+  }
+
+  async function retryPhoto() {
+    if (!connected || busy || !activeOperationId) return;
+    busy = true;
+    setMoveButtons(false);
+    try {
+      await command("retry_photo", { operation_id: activeOperationId });
+      const result = await pollOperationPhoto(activeOperationId, 180000);
+      await confirmDisplayed(activeOperationId, result.photoPath);
+      controlReady = true;
+      setMoveButtons(true);
+      status("motorStatus", "照片重新取得並顯示，已重新解鎖。", "good");
+    } catch (e) {
+      status("motorStatus", "重新取得照片失敗：" + e.message, "bad");
+    } finally {
+      busy = false;
+    }
+  }
+
+  async function closeControl() {
+    if (!connected || busy || mode !== "control") return;
+    busy = true;
+    controlReady = false;
+    setMoveButtons(false);
+    $("closeControlBtn").disabled = true;
+    status("controlStatus", "正在關閉角度調整並恢復定時拍攝…", "warn");
+    try {
+      await command("close_control");
+      await command("set_interval", { seconds: intervalSeconds });
+      mode = "scheduled";
+      $("motorPanel").classList.add("hidden");
+      activeOperationId = null;
+      await refreshView();
+      status("controlStatus", "角度調整已關閉，已恢復每 " + intervalSeconds + " 秒定時拍攝。", "good");
+      $("openControlBtn").disabled = false;
+      disableSchedule(false);
+    } catch (e) {
+      status("controlStatus", "關閉控制模式失敗：" + e.message, "bad");
+      $("closeControlBtn").disabled = false;
+    } finally {
+      busy = false;
+    }
+  }
+
+  $("startBtn").addEventListener("click", startViewer);
+  $("refreshBtn").addEventListener("click", loadLatestPhoto);
+  $("interval10").addEventListener("click", () => setIntervalMode(10));
+  $("interval30").addEventListener("click", () => setIntervalMode(30));
+  $("openControlBtn").addEventListener("click", openControl);
+  $("closeControlBtn").addEventListener("click", closeControl);
+  $("leftBtn").addEventListener("click", () => move("left"));
+  $("rightBtn").addEventListener("click", () => move("right"));
+  $("smallMove").addEventListener("click", () => {
+    moveSize = "small";
+    $("smallMove").classList.add("active");
+    $("largeMove").classList.remove("active");
+  });
+  $("largeMove").addEventListener("click", () => {
+    moveSize = "large";
+    $("largeMove").classList.add("active");
+    $("smallMove").classList.remove("active");
+  });
+
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden && connected) loadLatestPhoto();
+  });
+})();
+</script>
 </body>
 </html>
