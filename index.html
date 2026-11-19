@@ -7,62 +7,210 @@
   <meta name="theme-color" content="#101827">
   <title>第二台 4G 攝影機 V5</title>
   <style>
-    :root { color-scheme: dark; --bg:#101827; --panel:#1d293b; --muted:#aebdd0; --green:#198f72; --blue:#2878c8; --red:#b94b55; }
+    :root {
+      color-scheme: dark;
+      --bg:#101827;
+      --panel:#1d293b;
+      --muted:#aebdd0;
+      --green:#198f72;
+      --blue:#2878c8;
+      --red:#b94b55;
+    }
     * { box-sizing:border-box; }
-    body { margin:0; padding:16px; background:var(--bg); color:#fff; font-family:Arial,"Noto Sans TC",sans-serif; }
+    body {
+      margin:0;
+      padding:16px;
+      background:var(--bg);
+      color:#fff;
+      font-family:Arial,"Noto Sans TC",sans-serif;
+    }
     .container { max-width:760px; margin:auto; }
     h1 { font-size:24px; margin:4px 0 6px; }
     h2 { font-size:18px; margin:0 0 12px; }
-    .sub,.muted { color:var(--muted); font-size:13px; line-height:1.55; }
-    .panel { background:var(--panel); padding:16px; border-radius:14px; margin-top:14px; }
-    input,select { width:100%; padding:12px; border:1px solid #52637b; border-radius:8px; background:#111c2d; color:white; font-size:16px; }
-    button { border:0; border-radius:9px; padding:12px 15px; background:var(--green); color:white; font-size:15px; font-weight:600; cursor:pointer; touch-action:manipulation; }
+    .sub,.muted {
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.55;
+    }
+    .panel {
+      background:var(--panel);
+      padding:16px;
+      border-radius:14px;
+      margin-top:14px;
+    }
+    input,select {
+      width:100%;
+      padding:12px;
+      border:1px solid #52637b;
+      border-radius:8px;
+      background:#111c2d;
+      color:white;
+      font-size:16px;
+    }
+    button {
+      border:0;
+      border-radius:9px;
+      padding:12px 15px;
+      background:var(--green);
+      color:white;
+      font-size:15px;
+      font-weight:600;
+      cursor:pointer;
+      touch-action:manipulation;
+    }
     button.secondary { background:#34445d; }
     button.blue { background:var(--blue); }
     button.danger { background:var(--red); }
-    button:disabled { opacity:.42; cursor:not-allowed; }
-    .row { display:flex; gap:9px; flex-wrap:wrap; align-items:center; }
+    button:disabled {
+      opacity:.42;
+      cursor:not-allowed;
+    }
+    .row {
+      display:flex;
+      gap:9px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
     .row > button { flex:1; }
-    .mode-row { display:grid; grid-template-columns:1fr 1fr; gap:9px; }
+    .mode-row {
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:9px;
+    }
     .mode-row button { background:#34445d; }
-    .mode-row button.active { background:var(--green); outline:2px solid #8ce2c4; }
-    .screen { width:100%; aspect-ratio:4/3; background:#060b14; border-radius:12px; display:flex; justify-content:center; align-items:center; overflow:hidden; margin-top:12px; }
-    .screen img { width:100%; height:100%; object-fit:contain; }
-    .screen span { color:var(--muted); padding:16px; text-align:center; }
-    .status { margin-top:10px; font-size:14px; line-height:1.5; overflow-wrap:anywhere; color:#d4deeb; }
-    .good { color:#89dfb1; } .warn { color:#ffd27d; } .bad { color:#ffaaaa; }
-    .stats { display:grid; grid-template-columns:1fr 1fr; gap:9px; margin-top:12px; }
-    .stat { background:#111c2d; border-radius:9px; padding:11px; min-width:0; }
-    .stat .label { color:var(--muted); font-size:12px; }
-    .stat .value { margin-top:5px; font-size:16px; font-weight:700; overflow-wrap:anywhere; }
-    .dpad { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:9px; width:min(100%,340px); margin:14px auto 8px; }
-    .dpad button { min-height:58px; margin:0; font-size:17px; }
+    .mode-row button.active {
+      background:var(--green);
+      outline:2px solid #8ce2c4;
+    }
+    .screen {
+      width:100%;
+      aspect-ratio:4/3;
+      background:#060b14;
+      border-radius:12px;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      overflow:hidden;
+      margin-top:12px;
+    }
+    .screen img {
+      width:100%;
+      height:100%;
+      object-fit:contain;
+    }
+    .screen span {
+      color:var(--muted);
+      padding:16px;
+      text-align:center;
+    }
+    .status {
+      margin-top:10px;
+      font-size:14px;
+      line-height:1.5;
+      overflow-wrap:anywhere;
+      color:#d4deeb;
+    }
+    .good { color:#89dfb1; }
+    .warn { color:#ffd27d; }
+    .bad { color:#ffaaaa; }
+    .stats {
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:9px;
+      margin-top:12px;
+    }
+    .stat {
+      background:#111c2d;
+      border-radius:9px;
+      padding:11px;
+      min-width:0;
+    }
+    .stat .label {
+      color:var(--muted);
+      font-size:12px;
+    }
+    .stat .value {
+      margin-top:5px;
+      font-size:16px;
+      font-weight:700;
+      overflow-wrap:anywhere;
+    }
+    .dpad {
+      display:grid;
+      grid-template-columns:repeat(3,minmax(0,1fr));
+      gap:9px;
+      width:min(100%,340px);
+      margin:14px auto 8px;
+    }
+    .dpad button {
+      min-height:58px;
+      margin:0;
+      font-size:17px;
+    }
     .dpad .up { grid-column:2; grid-row:1; }
     .dpad .left { grid-column:1; grid-row:2; }
-    .dpad .center { grid-column:2; grid-row:2; display:flex; align-items:center; justify-content:center; color:var(--muted); font-size:23px; }
+    .dpad .center {
+      grid-column:2;
+      grid-row:2;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      color:var(--muted);
+      font-size:23px;
+    }
     .dpad .right { grid-column:3; grid-row:2; }
     .dpad .down { grid-column:2; grid-row:3; }
     .hidden { display:none !important; }
-    .pill { display:inline-block; padding:4px 9px; border-radius:99px; background:#34445d; color:#dce8f5; font-size:12px; }
-    .divider { height:1px; background:#3a4a60; margin:14px 0; }
+    .pill {
+      display:inline-block;
+      padding:4px 9px;
+      border-radius:99px;
+      background:#34445d;
+      color:#dce8f5;
+      font-size:12px;
+    }
+    .divider {
+      height:1px;
+      background:#3a4a60;
+      margin:14px 0;
+    }
     .small { font-size:12px; }
-    @media(max-width:430px) { body{padding:11px} .panel{padding:13px} h1{font-size:21px} }
+    @media(max-width:430px) {
+      body { padding:11px; }
+      .panel { padding:13px; }
+      h1 { font-size:21px; }
+    }
   </style>
 </head>
 <body>
+
 <div class="container">
+
   <h1>第二台 4G 攝影機</h1>
-  <div class="sub">ESP32-S3 N16R8 · OV5640 · SIMCOM A7670SA · Supabase V5</div>
+  <div class="sub">
+    ESP32-S3 N16R8 · OV5640 · SIMCOM A7670SA · Supabase V5
+  </div>
 
   <section class="panel">
     <h2>連線與觀看驗證</h2>
-    <label for="token" class="sub">觀看密碼（CAMERA_VIEW_TOKEN）</label>
-    <input id="token" type="password" placeholder="輸入觀看密碼" autocomplete="off">
+    <label for="token" class="sub">
+      觀看密碼（CAMERA_VIEW_TOKEN）
+    </label>
+    <input
+      id="token"
+      type="password"
+      placeholder="輸入觀看密碼"
+      autocomplete="off"
+    >
     <div class="row" style="margin-top:10px">
       <button id="startBtn">開始連線</button>
-      <button id="refreshBtn" class="secondary" disabled>立即更新照片</button>
+      <button id="refreshBtn" class="secondary" disabled>
+        立即更新照片
+      </button>
     </div>
-    <div id="connectionStatus" class="status">尚未連線</div>
+    <div id="connectionStatus" class="status">
+      尚未連線
+    </div>
   </section>
 
   <section class="panel">
@@ -70,111 +218,207 @@
       <h2 style="margin:0">最新攝影機畫面</h2>
       <span id="modeBadge" class="pill">尚未連線</span>
     </div>
+
     <div class="screen">
-      <img id="photo" alt="最新攝影機照片" referrerpolicy="no-referrer" hidden>
+      <img
+        id="photo"
+        alt="最新攝影機照片"
+        referrerpolicy="no-referrer"
+        hidden
+      >
       <span id="empty">登入後載入最新照片</span>
     </div>
+
     <div class="stats">
-      <div class="stat"><div class="label">最後照片拍攝時間</div><div class="value" id="capturedAt">尚無資料</div></div>
-      <div class="stat"><div class="label">距離上次畫面更新</div><div class="value" id="age">--</div></div>
-      <div class="stat"><div class="label">最後成功顯示時間</div><div class="value" id="displayedAt">尚無資料</div></div>
-      <div class="stat"><div class="label">目前操作狀態</div><div class="value" id="operationStatus">待機</div></div>
+      <div class="stat">
+        <div class="label">最後照片拍攝時間</div>
+        <div class="value" id="capturedAt">尚無資料</div>
+      </div>
+      <div class="stat">
+        <div class="label">距離上次畫面更新</div>
+        <div class="value" id="age">--</div>
+      </div>
+      <div class="stat">
+        <div class="label">最後成功顯示時間</div>
+        <div class="value" id="displayedAt">尚無資料</div>
+      </div>
+      <div class="stat">
+        <div class="label">目前操作狀態</div>
+        <div class="value" id="operationStatus">待機</div>
+      </div>
     </div>
-    <div id="photoStatus" class="status">尚未取得照片</div>
+
+    <div id="photoStatus" class="status">
+      尚未取得照片
+    </div>
   </section>
 
   <section class="panel">
     <h2>固定拍攝模式</h2>
-    <div class="sub">平時由攝影機依照設定間隔自行拍照。切換至角度調整時會先暫停定時拍攝。</div>
-    <div class="mode-row" style="margin-top:12px">
-      <button id="interval10" class="active" disabled>每 10 秒</button>
-      <button id="interval30" disabled>每 30 秒</button>
+    <div class="sub">
+      平時由攝影機依照設定間隔自行拍照。
+      切換至角度調整時會先暫停定時拍攝。
     </div>
-    <div id="scheduleStatus" class="status">登入後可設定拍攝間隔</div>
+
+    <div class="mode-row" style="margin-top:12px">
+      <button id="interval10" class="active" disabled>
+        每 10 秒
+      </button>
+      <button id="interval30" disabled>
+        每 30 秒
+      </button>
+    </div>
+
+    <div id="scheduleStatus" class="status">
+      登入後可設定拍攝間隔
+    </div>
   </section>
 
   <section class="panel">
     <h2>角度調整模式</h2>
-    <div class="sub">按「打開馬達」後，系統會暫停定時拍攝，先拍攝並顯示一張進入控制模式前的照片。照片確認顯示後才開放方向按鈕。</div>
+    <div class="sub">
+      打開馬達後，系統會暫停定時拍攝，
+      先拍攝並顯示一張進入控制模式前的照片。
+      照片確認顯示後才開放方向按鈕。
+    </div>
+
     <div class="row" style="margin-top:12px">
-      <button id="openControlBtn" class="blue" disabled>打開馬達</button>
-      <button id="closeControlBtn" class="danger" disabled>關閉馬達</button>
+      <button id="openControlBtn" class="blue" disabled>
+        打開馬達
+      </button>
+      <button id="closeControlBtn" class="danger" disabled>
+        關閉馬達
+      </button>
     </div>
 
     <div id="motorPanel" class="hidden">
       <div class="divider"></div>
+
       <div class="sub">移動幅度</div>
+
       <div class="mode-row" style="margin-top:8px">
-        <button id="smallMove" class="active">小範圍</button>
-        <button id="largeMove">雙倍幅度</button>
+        <button id="smallMove" class="active">
+          小範圍
+        </button>
+        <button id="largeMove">
+          雙倍幅度
+        </button>
       </div>
-      <div class="sub" style="margin-top:8px">小範圍沿用原本步數；雙倍幅度使用兩倍步數。實際步數由 ESP32 韌體設定。</div>
+
+      <div class="sub" style="margin-top:8px">
+        小範圍沿用原本步數；雙倍幅度使用兩倍步數。
+        左右使用步進馬達，上下使用 MG90S。
+      </div>
 
       <div class="dpad" aria-label="攝影機方向控制">
-        <button class="up" disabled title="MG90S 尚未接線">↑ 上</button>
+        <button class="up" id="upBtn" disabled>↑ 上</button>
         <button class="left" id="leftBtn" disabled>← 左</button>
         <span class="center">●</span>
         <button class="right" id="rightBtn" disabled>右 →</button>
-        <button class="down" disabled title="MG90S 尚未接線">↓ 下</button>
+        <button class="down" id="downBtn" disabled>↓ 下</button>
       </div>
-      <div class="sub small">目前只啟用步進馬達左右軸。上下 MG90S 尚未接線，因此暫不開放。</div>
-      <div id="motorStatus" class="status">等待控制模式初始化</div>
-      <div id="latencyStatus" class="status">尚無馬達操作紀錄</div>
+
+      <div class="sub small">
+        左右：28BYJ-48 + ULN2003；
+        上下：MG90S（GPIO47）。
+        每次移動後必須先顯示該次照片，才會解鎖下一次操作。
+      </div>
+
+      <div class="row" style="margin-top:10px">
+        <button id="retryPhotoBtn" class="secondary" disabled>
+          重新取得照片（不重新移動）
+        </button>
+      </div>
+
+      <div id="motorStatus" class="status">
+        等待控制模式初始化
+      </div>
+
+      <div id="latencyStatus" class="status">
+        尚無馬達操作紀錄
+      </div>
     </div>
-    <div id="controlStatus" class="status">馬達控制尚未開啟</div>
+
+    <div id="controlStatus" class="status">
+      馬達控制尚未開啟
+    </div>
   </section>
 
   <section class="panel">
     <h2>系統資訊</h2>
-    <div id="systemStatus" class="status">尚未取得 V5 狀態</div>
+    <div id="systemStatus" class="status">
+      尚未取得 V5 狀態
+    </div>
   </section>
-</div>
 
-<script>
+</div><script>
 (() => {
   "use strict";
 
-  const BASE = "https://sbyexakcynddnbsixtgm.supabase.co/functions/v1/";
+  const BASE =
+    "https://sbyexakcynddnbsixtgm.supabase.co/functions/v1/";
+
   const VIEW_API = BASE + "camera-view-v5";
   const COMMAND_API = BASE + "camera-command-v5";
 
   const $ = id => document.getElementById(id);
+
   let viewToken = "";
   let connected = false;
-  let mode = "scheduled";
+
+  let mode = "timed";
+  let serverMode = "timed";
+
   let intervalSeconds = 10;
   let moveSize = "small";
+
   let busy = false;
   let controlReady = false;
   let activeOperationId = null;
-  let currentPhotoPath = null;
+
   let lastCapturedAt = null;
   let lastDisplayedAt = null;
-  let lastPhotoAgeAtFetch = null;
+
   let photoAgeTimer = null;
   let pollTimer = null;
   let pollBusy = false;
+
   let lastPhotoKey = "";
 
   const fmt = value => {
     if (!value) return "尚無資料";
+
     const d = new Date(value);
-    return Number.isNaN(d.getTime()) ? String(value) : d.toLocaleString("zh-TW", { hour12:false });
+
+    return Number.isNaN(d.getTime())
+      ? String(value)
+      : d.toLocaleString("zh-TW", { hour12:false });
   };
-  const setText = (id, value) => { $(id).textContent = value; };
+
+  const setText = (id, value) => {
+    $(id).textContent = value;
+  };
+
   const status = (id, message, kind="") => {
     $(id).textContent = message;
     $(id).className = "status " + kind;
   };
+
   const disableSchedule = disabled => {
     $("interval10").disabled = disabled;
     $("interval30").disabled = disabled;
   };
+
   const setMoveButtons = enabled => {
     $("leftBtn").disabled = !enabled;
     $("rightBtn").disabled = !enabled;
+    $("upBtn").disabled = !enabled;
+    $("downBtn").disabled = !enabled;
   };
-  const setModeBadge = text => setText("modeBadge", text);
+
+  const setModeBadge = text => {
+    setText("modeBadge", text);
+  };
 
   async function api(path, options={}) {
     const response = await fetch(path, {
@@ -185,20 +429,37 @@
         "x-view-token": viewToken
       }
     });
+
     let data;
-    try { data = await response.json(); }
-    catch (_) { throw new Error("伺服器回應不是有效 JSON（HTTP " + response.status + "）"); }
-    if (!response.ok || data.ok === false) {
-      throw new Error(data.error || ("HTTP " + response.status));
+
+    try {
+      data = await response.json();
+    } catch (_) {
+      throw new Error(
+        "伺服器回應不是有效 JSON（HTTP " +
+        response.status + "）"
+      );
     }
+
+    if (!response.ok || data.ok === false) {
+      throw new Error(
+        data.error || ("HTTP " + response.status)
+      );
+    }
+
     return data;
   }
 
   async function command(action, fields={}) {
     return api(COMMAND_API, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action, ...fields })
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        action,
+        ...fields
+      })
     });
   }
 
@@ -211,333 +472,1007 @@
   }
 
   function extractOperation(data) {
-    return data.operation || data.state?.operation || null;
+    return data.operation ||
+      data.state?.operation ||
+      null;
   }
 
   function renderState(data) {
-    if (data.mode) mode = data.mode;
-    if (Number(data.interval_seconds) === 10 || Number(data.interval_seconds) === 30) {
-      intervalSeconds = Number(data.interval_seconds);
+    const remoteMode =
+      data.mode ||
+      data.state?.mode ||
+      serverMode;
+
+    serverMode = remoteMode;
+
+    mode = remoteMode === "timed"
+      ? "timed"
+      : "control";
+
+    const remoteInterval = Number(
+      data.interval_seconds ??
+      data.state?.interval_seconds
+    );
+
+    if (remoteInterval === 10 || remoteInterval === 30) {
+      intervalSeconds = remoteInterval;
     }
-    $("interval10").classList.toggle("active", intervalSeconds === 10);
-    $("interval30").classList.toggle("active", intervalSeconds === 30);
-    setModeBadge(mode === "control" ? "角度調整模式" : "固定拍攝模式");
+
+    $("interval10").classList.toggle(
+      "active",
+      intervalSeconds === 10
+    );
+
+    $("interval30").classList.toggle(
+      "active",
+      intervalSeconds === 30
+    );
+
+    setModeBadge(
+      mode === "control"
+        ? "角度調整模式"
+        : "固定拍攝模式"
+    );
+
+    disableSchedule(mode !== "timed");
+
+    $("motorPanel").classList.toggle(
+      "hidden",
+      mode !== "control"
+    );
+
+    $("openControlBtn").disabled =
+      !connected || mode !== "timed";
+
+    $("closeControlBtn").disabled =
+      mode !== "control" ||
+      remoteMode !== "adjusting" ||
+      busy;
 
     const op = extractOperation(data);
-    const activeStatus = op?.status || data.active_status || "idle";
+
+    const activeStatus =
+      op?.status ||
+      data.active_status ||
+      "idle";
+
     setText("operationStatus", activeStatus);
-    setText("systemStatus",
+
+    setText(
+      "systemStatus",
       "服務：" + (data.service || "camera-view-v5") +
       " · 版本：" + (data.version ?? "V5") +
-      " · 模式：" + mode +
+      " · 模式：" + remoteMode +
       " · 拍攝間隔：" + intervalSeconds + " 秒" +
-      (data.server_time ? " · 伺服器：" + fmt(data.server_time) : "")
+      (
+        data.server_time
+          ? " · 伺服器：" + fmt(data.server_time)
+          : ""
+      )
     );
   }
 
   function updateAge() {
-    if (lastCapturedAt) {
-      const seconds = Math.max(0, Math.floor((Date.now() - lastCapturedAt.getTime()) / 1000));
-      setText("age", seconds + " 秒");
-    }
+    if (!lastCapturedAt) return;
+
+    const seconds = Math.max(
+      0,
+      Math.floor(
+        (Date.now() - lastCapturedAt.getTime()) / 1000
+      )
+    );
+
+    setText("age", seconds + " 秒");
   }
 
-  async function showPhoto(data, expectedOperationId=null) {
-    const image = data.operation_photo || data.image || {};
-    const imageUrl = data.operation_photo?.image_url || data.image_url || image.url;
-    const photoPath = data.operation_photo?.path || image.path || null;
-    const captured = data.operation_photo?.captured_at || image.captured_at || image.uploaded_at || null;
-    const operationPhotoId = data.operation_photo?.operation_id ?? null;
+  async function showPhoto(
+    data,
+    expectedOperationId=null
+  ) {
+    const image =
+      data.operation_photo ||
+      data.image ||
+      {};
+
+    const imageUrl =
+      data.operation_photo?.image_url ||
+      data.image_url ||
+      image.url;
+
+    const photoPath =
+      data.operation_photo?.path ||
+      image.path ||
+      null;
+
+    const captured =
+      data.operation_photo?.captured_at ||
+      image.captured_at ||
+      image.uploaded_at ||
+      null;
+
+    const operationPhotoId =
+      data.operation_photo?.operation_id ??
+      null;
 
     if (!imageUrl) return false;
-    if (expectedOperationId && String(operationPhotoId) !== String(expectedOperationId)) return false;
 
-    const key = String(operationPhotoId || "") + "|" + String(photoPath || imageUrl) + "|" + String(captured || "");
-    if (key === lastPhotoKey && !$("photo").hidden) return true;
+    if (
+      expectedOperationId &&
+      String(operationPhotoId) !==
+      String(expectedOperationId)
+    ) {
+      return false;
+    }
+
+    const key =
+      String(operationPhotoId || "") + "|" +
+      String(photoPath || imageUrl) + "|" +
+      String(captured || "");
+
+    if (
+      key === lastPhotoKey &&
+      !$("photo").hidden
+    ) {
+      return true;
+    }
 
     const url = new URL(imageUrl);
-    url.searchParams.set("v5_refresh", String(Date.now()));
+
+    url.searchParams.set(
+      "v5_refresh",
+      String(Date.now())
+    );
 
     await new Promise((resolve, reject) => {
       const img = $("photo");
-      const timeout = setTimeout(() => reject(new Error("照片載入逾時")), 20000);
-      img.onload = () => { clearTimeout(timeout); resolve(); };
-      img.onerror = () => { clearTimeout(timeout); reject(new Error("照片下載失敗")); };
+
+      const timeout = setTimeout(() => {
+        reject(new Error("照片載入逾時"));
+      }, 20000);
+
+      img.onload = () => {
+        clearTimeout(timeout);
+        resolve();
+      };
+
+      img.onerror = () => {
+        clearTimeout(timeout);
+        reject(new Error("照片下載失敗"));
+      };
+
       img.src = url.toString();
     });
 
     $("photo").hidden = false;
     $("empty").hidden = true;
+
     lastPhotoKey = key;
     lastDisplayedAt = new Date();
+
     if (captured) {
       const d = new Date(captured);
-      lastCapturedAt = Number.isNaN(d.getTime()) ? null : d;
+
+      lastCapturedAt =
+        Number.isNaN(d.getTime()) ? null : d;
+
       setText("capturedAt", fmt(captured));
-    } else if (image.uploaded_at) {
-      setText("capturedAt", fmt(image.uploaded_at));
     }
-    setText("displayedAt", fmt(lastDisplayedAt));
-    if (typeof image.age_seconds_at_response === "number") {
-      lastPhotoAgeAtFetch = image.age_seconds_at_response;
-    }
+
+    setText(
+      "displayedAt",
+      fmt(lastDisplayedAt)
+    );
+
     updateAge();
-    status("photoStatus", "照片已下載並顯示" + (expectedOperationId ? "；正在向伺服器確認這張操作後照片" : ""), "good");
+
+    status(
+      "photoStatus",
+      expectedOperationId
+        ? "本次操作後照片已顯示，等待伺服器確認"
+        : "照片已下載並顯示",
+      "good"
+    );
+
     return true;
   }
 
   async function refreshView(operationId=null) {
     const url = new URL(VIEW_API);
-    if (operationId) url.searchParams.set("operation_id", operationId);
+
+    if (operationId) {
+      url.searchParams.set(
+        "operation_id",
+        operationId
+      );
+    }
+
     const data = await api(url.toString());
+
     renderState(data);
+
     return data;
   }
 
   async function loadLatestPhoto() {
-    if (!connected || pollBusy || document.hidden) return;
+    // 控制模式期間不更新 latest.jpg，
+    // 避免覆蓋剛完成的操作照片。
+    if (
+      !connected ||
+      pollBusy ||
+      busy ||
+      mode !== "timed" ||
+      document.hidden
+    ) {
+      return;
+    }
+
     pollBusy = true;
+
     try {
       const data = await refreshView();
+
       await showPhoto(data);
-      status("connectionStatus", "V5 雲端連線正常", "good");
+
+      status(
+        "connectionStatus",
+        "V5 雲端連線正常",
+        "good"
+      );
     } catch (e) {
-      status("photoStatus", "更新照片失敗：" + e.message, "warn");
+      status(
+        "photoStatus",
+        "更新照片失敗：" + e.message,
+        "warn"
+      );
     } finally {
       pollBusy = false;
     }
   }
 
-  async function pollOperationPhoto(operationId, timeoutMs=180000) {
+  async function pollOperationPhoto(
+    operationId,
+    timeoutMs=360000
+  ) {
     const start = Date.now();
+
     while (Date.now() - start < timeoutMs) {
       const data = await refreshView(operationId);
+
       const op = extractOperation(data);
-      const opStatus = op?.status || data.active_status || "等待裝置";
-      status("motorStatus", "操作 #" + operationId + " · " + opStatus);
-      if (opStatus === "failed") throw new Error(op?.error || "裝置回報操作失敗");
-      const opPhoto = data.operation_photo;
-      if (opPhoto && String(opPhoto.operation_id) === String(operationId) && opPhoto.image_url && opPhoto.path) {
-        status("motorStatus", "馬達後照片已上傳，正在下載並顯示…", "good");
-        const displayed = await showPhoto(data, operationId);
-        if (!displayed) {
-          throw new Error("收到的照片不是本次 operation_id 對應的照片，拒絕解鎖");
-        }
-        return { data, photoPath: opPhoto.path };
+
+      const opStatus =
+        op?.status ||
+        data.active_status ||
+        "等待裝置";
+
+      status(
+        "motorStatus",
+        "操作 #" + operationId + " · " + opStatus
+      );
+
+      if (opStatus === "failed") {
+        throw new Error(
+          op?.error_message ||
+          op?.error ||
+          "裝置回報操作失敗"
+        );
       }
-      await new Promise(resolve => setTimeout(resolve, 1200));
+
+      const opPhoto = data.operation_photo;
+
+      if (
+        opPhoto &&
+        String(opPhoto.operation_id) ===
+          String(operationId) &&
+        opPhoto.image_url &&
+        opPhoto.path
+      ) {
+        status(
+          "motorStatus",
+          "馬達後照片已上傳，正在下載並顯示…",
+          "good"
+        );
+
+        const displayed = await showPhoto(
+          data,
+          operationId
+        );
+
+        if (!displayed) {
+          throw new Error(
+            "本次操作照片未能正確載入，控制保持鎖定"
+          );
+        }
+
+        return {
+          data,
+          photoPath: opPhoto.path
+        };
+      }
+
+      await new Promise(resolve =>
+        setTimeout(resolve, 1200)
+      );
     }
-    throw new Error("等待裝置完成操作及上傳照片逾時");
+
+    throw new Error(
+      "等待裝置完成操作及上傳照片逾時"
+    );
   }
 
-  async function confirmDisplayed(operationId, photoPath) {
-    const result = await command("display_confirm", {
-      operation_id: operationId,
-      photo_path: photoPath
-    });
-    if (result.unlock !== true) throw new Error("伺服器尚未確認照片顯示，控制保持鎖定");
+  async function confirmDisplayed(
+    operationId,
+    photoPath
+  ) {
+    const result = await command(
+      "display_confirm",
+      {
+        operation_id: operationId,
+        photo_path: photoPath
+      }
+    );
+
+    if (result.unlock !== true) {
+      throw new Error(
+        "伺服器尚未確認照片顯示，控制保持鎖定"
+      );
+    }
+
     return result;
   }
 
-  async function waitForControlEntryPhoto(operationId) {
-    const result = await pollOperationPhoto(operationId, 180000);
-    await confirmDisplayed(operationId, result.photoPath);
-    controlReady = true;
-    setMoveButtons(true);
-    status("controlStatus", "進入控制模式的當下照片已顯示；現在可以調整角度。", "good");
-  }
+  async function waitForControlEntryPhoto(
+    operationId
+  ) {
+    const result = await pollOperationPhoto(
+      operationId,
+      360000
+    );
 
-  async function startViewer() {
+    await confirmDisplayed(
+      operationId,
+      result.photoPath
+    );
+
+    controlReady = true;
+
+    setMoveButtons(true);
+
+    $("closeControlBtn").disabled = false;
+    $("retryPhotoBtn").disabled = true;
+
+    serverMode = "adjusting";
+
+    status(
+      "controlStatus",
+      "進入控制模式的當下照片已顯示；現在可以調整角度。",
+      "good"
+    );
+  }  async function startViewer() {
     const input = $("token");
+
     viewToken = input.value.trim();
+
     if (!viewToken) {
-      status("connectionStatus", "請輸入觀看密碼", "bad");
+      status(
+        "connectionStatus",
+        "請輸入觀看密碼",
+        "bad"
+      );
       return;
     }
+
     input.value = "";
     $("startBtn").disabled = true;
+
     try {
       const data = await refreshView();
+
       connected = true;
+
       $("refreshBtn").disabled = false;
-      disableSchedule(false);
-      $("openControlBtn").disabled = false;
+
+      renderState(data);
+
       await showPhoto(data);
-      status("connectionStatus", "已連線至 camera-view-v5", "good");
-      status("scheduleStatus", "目前拍攝間隔：" + intervalSeconds + " 秒");
+
+      status(
+        "connectionStatus",
+        "已連線至 camera-view-v5",
+        "good"
+      );
+
+      status(
+        "scheduleStatus",
+        "目前拍攝間隔：" + intervalSeconds + " 秒"
+      );
+
+      // 如果重新登入時已在控制模式，
+      // 必須先確認上一張操作照片，才允許移動。
+      if (mode === "control") {
+        $("motorPanel").classList.remove("hidden");
+
+        controlReady = false;
+        setMoveButtons(false);
+
+        const op = extractOperation(data);
+
+        activeOperationId =
+          extractOperationId(data);
+
+        if (
+          data.can_move === true &&
+          op?.status === "done" &&
+          op?.photo_displayed_at
+        ) {
+          controlReady = true;
+
+          setMoveButtons(true);
+
+          $("closeControlBtn").disabled = false;
+
+          status(
+            "controlStatus",
+            "已恢復既有控制工作階段；上一張操作照片已確認。",
+            "good"
+          );
+        } else if (op?.status === "failed") {
+          $("retryPhotoBtn").disabled = false;
+
+          status(
+            "controlStatus",
+            "偵測到未完成操作；方向控制保持鎖定。",
+            "warn"
+          );
+        } else if (activeOperationId) {
+          status(
+            "controlStatus",
+            "正在恢復尚未完成的操作並確認照片…",
+            "warn"
+          );
+
+          try {
+            await waitForControlEntryPhoto(
+              activeOperationId
+            );
+          } catch (resumeError) {
+            $("retryPhotoBtn").disabled = false;
+
+            status(
+              "controlStatus",
+              "恢復操作未完成：" +
+              resumeError.message +
+              "。方向控制保持鎖定。",
+              "bad"
+            );
+          }
+        }
+      }
+
       if (pollTimer) clearInterval(pollTimer);
-      pollTimer = setInterval(loadLatestPhoto, 4000);
-      if (photoAgeTimer) clearInterval(photoAgeTimer);
-      photoAgeTimer = setInterval(updateAge, 1000);
+
+      pollTimer = setInterval(
+        loadLatestPhoto,
+        4000
+      );
+
+      if (photoAgeTimer) {
+        clearInterval(photoAgeTimer);
+      }
+
+      photoAgeTimer = setInterval(
+        updateAge,
+        1000
+      );
+
     } catch (e) {
       connected = false;
-      status("connectionStatus", "連線失敗：" + e.message, "bad");
+
+      status(
+        "connectionStatus",
+        "連線失敗：" + e.message,
+        "bad"
+      );
+
     } finally {
       $("startBtn").disabled = false;
     }
   }
 
   async function setIntervalMode(seconds) {
-    if (!connected || busy || mode === "control") return;
+    if (
+      !connected ||
+      busy ||
+      mode !== "timed"
+    ) {
+      return;
+    }
+
     busy = true;
+
     disableSchedule(true);
+
     try {
-      await command("set_interval", { seconds });
+      await command(
+        "set_interval",
+        { seconds }
+      );
+
       intervalSeconds = seconds;
-      status("scheduleStatus", "已送出每 " + seconds + " 秒拍攝設定；等待裝置套用。", "good");
+
+      status(
+        "scheduleStatus",
+        "已送出每 " + seconds +
+        " 秒拍攝設定；等待裝置套用。",
+        "good"
+      );
+
       await refreshView();
+
     } catch (e) {
-      status("scheduleStatus", "設定失敗：" + e.message, "bad");
+      status(
+        "scheduleStatus",
+        "設定失敗：" + e.message,
+        "bad"
+      );
+
     } finally {
       busy = false;
-      disableSchedule(mode === "control");
+
+      disableSchedule(mode !== "timed");
     }
   }
 
   async function openControl() {
-    if (!connected || busy || mode === "control") return;
+    if (
+      !connected ||
+      busy ||
+      mode !== "timed"
+    ) {
+      return;
+    }
+
     busy = true;
     controlReady = false;
+
     setMoveButtons(false);
+
     $("openControlBtn").disabled = true;
     $("closeControlBtn").disabled = true;
-    status("controlStatus", "正在暫停定時拍攝並要求裝置拍攝進入控制模式的當下照片…", "warn");
+
+    status(
+      "controlStatus",
+      "正在暫停定時拍攝，要求裝置拍攝進入控制模式的當下照片…",
+      "warn"
+    );
+
     try {
       const data = await command("open_control");
-      activeOperationId = extractOperationId(data);
-      if (!activeOperationId) throw new Error("open_control 回應缺少 operation_id");
+
+      activeOperationId =
+        extractOperationId(data);
+
+      if (!activeOperationId) {
+        throw new Error(
+          "open_control 回應缺少 operation_id"
+        );
+      }
+
       mode = "control";
+      serverMode = "opening";
+
       $("motorPanel").classList.remove("hidden");
-      $("closeControlBtn").disabled = false;
+
+      $("closeControlBtn").disabled = true;
+      $("retryPhotoBtn").disabled = true;
+
       disableSchedule(true);
-      await waitForControlEntryPhoto(activeOperationId);
+
+      await waitForControlEntryPhoto(
+        activeOperationId
+      );
+
     } catch (e) {
-      status("controlStatus", "開啟控制模式失敗：" + e.message, "bad");
+      status(
+        "controlStatus",
+        "開啟控制模式失敗：" + e.message,
+        "bad"
+      );
+
       setMoveButtons(false);
-      $("openControlBtn").disabled = false;
+
+      $("retryPhotoBtn").disabled =
+        !activeOperationId;
+
+      $("openControlBtn").disabled =
+        Boolean(activeOperationId);
+
     } finally {
       busy = false;
     }
   }
 
   async function move(direction) {
-    if (!connected || busy || !controlReady || mode !== "control") return;
+    if (
+      !connected ||
+      busy ||
+      !controlReady ||
+      mode !== "control"
+    ) {
+      return;
+    }
+
     busy = true;
     controlReady = false;
+
     setMoveButtons(false);
+
     const start = performance.now();
-    status("motorStatus", "已送出 " + (direction === "left" ? "向左" : "向右") + " 指令；等待裝置回報馬達開始…", "warn");
-    status("latencyStatus", "正在計算本次操作總延遲…");
+
+    const directionLabels = {
+      left: "向左",
+      right: "向右",
+      up: "向上",
+      down: "向下"
+    };
+
+    status(
+      "motorStatus",
+      "已送出 " + directionLabels[direction] +
+      " 指令；等待馬達開始…",
+      "warn"
+    );
+
+    status(
+      "latencyStatus",
+      "正在計算本次操作總延遲…"
+    );
+
     try {
-      const data = await command("move", { direction, size: moveSize });
-      activeOperationId = extractOperationId(data);
-      if (!activeOperationId) throw new Error("move 回應缺少 operation_id");
+      const data = await command(
+        "move",
+        {
+          direction,
+          size: moveSize
+        }
+      );
+
+      activeOperationId =
+        extractOperationId(data);
+
+      if (!activeOperationId) {
+        throw new Error(
+          "move 回應缺少 operation_id"
+        );
+      }
+
       const started = performance.now();
-      status("motorStatus", "指令已進入佇列，等待馬達完成、拍照及上傳…");
-      const result = await pollOperationPhoto(activeOperationId, 180000);
+
+      status(
+        "motorStatus",
+        "指令已進入佇列，等待馬達完成、拍照及上傳…"
+      );
+
+      const result = await pollOperationPhoto(
+        activeOperationId,
+        360000
+      );
+
       const beforeConfirm = performance.now();
-      await confirmDisplayed(activeOperationId, result.photoPath);
-      const totalMs = Math.round(performance.now() - start);
-      const deviceToPhotoMs = Math.round(beforeConfirm - started);
-      status("latencyStatus", "本次總延遲（按箭頭至照片顯示並確認）：" + totalMs + " ms；指令送出至照片顯示：" + deviceToPhotoMs + " ms。", "good");
-      status("motorStatus", "馬達操作完成，移動後照片已顯示；下一次操作已解鎖。", "good");
+
+      await confirmDisplayed(
+        activeOperationId,
+        result.photoPath
+      );
+
+      const totalMs = Math.round(
+        performance.now() - start
+      );
+
+      const deviceToPhotoMs = Math.round(
+        beforeConfirm - started
+      );
+
+      status(
+        "latencyStatus",
+        "本次總延遲（按箭頭至照片顯示並確認）：" +
+        totalMs + " ms；指令送出至照片顯示：" +
+        deviceToPhotoMs + " ms。",
+        "good"
+      );
+
+      status(
+        "motorStatus",
+        "馬達操作完成，移動後照片已顯示；下一次操作已解鎖。",
+        "good"
+      );
+
       controlReady = true;
+
       setMoveButtons(true);
+
+      $("closeControlBtn").disabled = false;
+      $("retryPhotoBtn").disabled = true;
+
     } catch (e) {
-      status("motorStatus", "操作未完成：" + e.message + "。方向按鈕保持鎖定，請使用重新取得照片或重試。", "bad");
+      $("retryPhotoBtn").disabled = false;
+
+      status(
+        "motorStatus",
+        "操作未完成：" + e.message +
+        "。方向按鈕保持鎖定。",
+        "bad"
+      );
+
       controlReady = false;
+
       setMoveButtons(false);
+
     } finally {
       busy = false;
     }
   }
 
   async function retryPhoto() {
-    if (!connected || busy || !activeOperationId) return;
+    if (
+      !connected ||
+      busy ||
+      mode !== "control"
+    ) {
+      return;
+    }
+
     busy = true;
+    controlReady = false;
+
     setMoveButtons(false);
+
+    $("retryPhotoBtn").disabled = true;
+
     try {
-      await command("retry_photo", { operation_id: activeOperationId });
-      const result = await pollOperationPhoto(activeOperationId, 180000);
-      await confirmDisplayed(activeOperationId, result.photoPath);
+      // 重新建立照片操作，不重複執行馬達。
+      const retry = await command("retry_photo");
+
+      const retryId =
+        extractOperationId(retry);
+
+      if (!retryId) {
+        throw new Error(
+          "retry_photo 回應缺少 operation_id"
+        );
+      }
+
+      activeOperationId = retryId;
+
+      const result = await pollOperationPhoto(
+        retryId,
+        360000
+      );
+
+      await confirmDisplayed(
+        retryId,
+        result.photoPath
+      );
+
       controlReady = true;
+
       setMoveButtons(true);
-      status("motorStatus", "照片重新取得並顯示，已重新解鎖。", "good");
+
+      $("closeControlBtn").disabled = false;
+
+      status(
+        "motorStatus",
+        "照片重新取得並顯示，已重新解鎖。",
+        "good"
+      );
+
     } catch (e) {
-      status("motorStatus", "重新取得照片失敗：" + e.message, "bad");
+      $("retryPhotoBtn").disabled = false;
+
+      status(
+        "motorStatus",
+        "重新取得照片失敗：" + e.message,
+        "bad"
+      );
+
     } finally {
       busy = false;
     }
   }
 
   async function closeControl() {
-    if (!connected || busy || mode !== "control") return;
+    if (
+      !connected ||
+      busy ||
+      mode !== "control"
+    ) {
+      return;
+    }
+
     busy = true;
     controlReady = false;
-    setMoveButtons(false);
-    $("closeControlBtn").disabled = true;
-    status("controlStatus", "正在關閉角度調整並恢復定時拍攝…", "warn");
-    try {
-      const closeResult = await command("close_control");
-      const closeId = extractOperationId(closeResult);
-      if (!closeId) throw new Error("close_control 回應缺少 operation_id");
 
-      // close_control is asynchronous: wait until the device reports close_done
-      // and camera-command-v5 changes the server mode back to timed.
+    setMoveButtons(false);
+
+    $("closeControlBtn").disabled = true;
+
+    status(
+      "controlStatus",
+      "正在關閉角度調整並恢復定時拍攝…",
+      "warn"
+    );
+
+    try {
+      const closeResult =
+        await command("close_control");
+
+      const closeId =
+        extractOperationId(closeResult);
+
+      if (!closeId) {
+        throw new Error(
+          "close_control 回應缺少 operation_id"
+        );
+      }
+
       const closeStarted = Date.now();
+
       let closed = false;
-      while (Date.now() - closeStarted < 180000) {
+
+      while (Date.now() - closeStarted < 240000) {
         const stateData = await refreshView(closeId);
+
         const op = extractOperation(stateData);
-        const serverMode = stateData.mode || stateData.state?.mode;
+
+        const remoteMode =
+          stateData.mode ||
+          stateData.state?.mode;
+
         if (op?.status === "failed") {
-          throw new Error(op.error_message || "裝置回報關閉控制失敗");
+          throw new Error(
+            op.error_message ||
+            "裝置回報關閉控制失敗"
+          );
         }
-        if (serverMode === "timed" && op?.status === "done") {
+
+        if (
+          remoteMode === "timed" &&
+          op?.status === "done"
+        ) {
           closed = true;
           break;
         }
-        await new Promise(resolve => setTimeout(resolve, 1200));
+
+        await new Promise(resolve =>
+          setTimeout(resolve, 1500)
+        );
       }
-      if (!closed) throw new Error("等待裝置完成 close_control 逾時");
+
+      if (!closed) {
+        throw new Error(
+          "等待裝置完成 close_control 逾時"
+        );
+      }
 
       mode = "timed";
+      serverMode = "timed";
+      controlReady = false;
+
       $("motorPanel").classList.add("hidden");
+
       activeOperationId = null;
+
+      $("retryPhotoBtn").disabled = true;
+
       await refreshView();
-      status("controlStatus", "裝置已完成關閉控制，伺服器模式已回到 timed；原本每 " + intervalSeconds + " 秒的拍攝排程繼續。", "good");
+
+      status(
+        "controlStatus",
+        "裝置已完成關閉控制；已恢復每 " +
+        intervalSeconds + " 秒定時拍攝。",
+        "good"
+      );
+
       $("openControlBtn").disabled = false;
+
       disableSchedule(false);
+
     } catch (e) {
-      status("controlStatus", "關閉控制模式失敗：" + e.message, "bad");
+      status(
+        "controlStatus",
+        "關閉控制模式失敗：" + e.message,
+        "bad"
+      );
+
       $("closeControlBtn").disabled = false;
+
     } finally {
       busy = false;
     }
   }
 
-  $("startBtn").addEventListener("click", startViewer);
-  $("refreshBtn").addEventListener("click", loadLatestPhoto);
-  $("interval10").addEventListener("click", () => setIntervalMode(10));
-  $("interval30").addEventListener("click", () => setIntervalMode(30));
-  $("openControlBtn").addEventListener("click", openControl);
-  $("closeControlBtn").addEventListener("click", closeControl);
-  $("leftBtn").addEventListener("click", () => move("left"));
-  $("rightBtn").addEventListener("click", () => move("right"));
+  // ==================================
+  // BUTTON EVENTS
+  // ==================================
+
+  $("startBtn").addEventListener(
+    "click",
+    startViewer
+  );
+
+  $("refreshBtn").addEventListener(
+    "click",
+    loadLatestPhoto
+  );
+
+  $("interval10").addEventListener(
+    "click",
+    () => setIntervalMode(10)
+  );
+
+  $("interval30").addEventListener(
+    "click",
+    () => setIntervalMode(30)
+  );
+
+  $("openControlBtn").addEventListener(
+    "click",
+    openControl
+  );
+
+  $("closeControlBtn").addEventListener(
+    "click",
+    closeControl
+  );
+
+  $("leftBtn").addEventListener(
+    "click",
+    () => move("left")
+  );
+
+  $("rightBtn").addEventListener(
+    "click",
+    () => move("right")
+  );
+
+  $("upBtn").addEventListener(
+    "click",
+    () => move("up")
+  );
+
+  $("downBtn").addEventListener(
+    "click",
+    () => move("down")
+  );
+
+  $("retryPhotoBtn").addEventListener(
+    "click",
+    retryPhoto
+  );
+
   $("smallMove").addEventListener("click", () => {
     moveSize = "small";
+
     $("smallMove").classList.add("active");
     $("largeMove").classList.remove("active");
   });
+
   $("largeMove").addEventListener("click", () => {
     moveSize = "large";
+
     $("largeMove").classList.add("active");
     $("smallMove").classList.remove("active");
   });
 
-  document.addEventListener("visibilitychange", () => {
-    if (!document.hidden && connected) loadLatestPhoto();
-  });
+  document.addEventListener(
+    "visibilitychange",
+    () => {
+      if (!document.hidden && connected) {
+        loadLatestPhoto();
+      }
+    }
+  );
+
 })();
 </script>
 </body>
