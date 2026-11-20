@@ -384,6 +384,8 @@
   let pollBusy = false;
 
   let lastPhotoKey = "";
+  let lastPhotoLoadedAtMs = 0;
+  const FRONTEND_BUILD = "V5.2-AUTO-20261120";
 
   const fmt = value => {
     if (!value) return "尚無資料";
@@ -548,7 +550,7 @@
         data.server_time
           ? " · 伺服器：" + fmt(data.server_time)
           : ""
-      )
+      ) + " · 網頁：" + FRONTEND_BUILD
     );
   }
 
@@ -584,10 +586,19 @@
       image.path ||
       null;
 
+    const uploadedAt =
+      data.operation_photo?.uploaded_at ||
+      data.state?.last_photo_uploaded_at ||
+      data.last_photo_uploaded_at ||
+      image.uploaded_at ||
+      image.updated_at ||
+      null;
+
     const captured =
       data.operation_photo?.captured_at ||
       image.captured_at ||
       image.uploaded_at ||
+      data.state?.last_photo_uploaded_at ||
       null;
 
     const operationPhotoId =
@@ -604,14 +615,19 @@
       return false;
     }
 
+    // latest.jpg uses one path for many photos: use the upload
+    // revision, not the path or capture timestamp alone.
     const key =
       String(operationPhotoId || "") + "|" +
       String(photoPath || imageUrl) + "|" +
-      String(captured || "");
+      String(uploadedAt || captured || "");
 
+    // Backstop: check the actual JPEG at least once each minute,
+    // even when the view endpoint returns unchanged metadata.
     if (
       key === lastPhotoKey &&
-      !$("photo").hidden
+      !$("photo").hidden &&
+      Date.now() - lastPhotoLoadedAtMs < 60000
     ) {
       return true;
     }
@@ -647,6 +663,7 @@
     $("empty").hidden = true;
 
     lastPhotoKey = key;
+    lastPhotoLoadedAtMs = Date.now();
     lastDisplayedAt = new Date();
 
     if (captured) {
@@ -676,7 +693,7 @@
     return true;
   }
 
-  async function refreshView(operationId=null) {
+  async function refreshView(operationId=null, timeoutMs=0) {
     const url = new URL(VIEW_API);
 
     if (operationId) {
@@ -686,11 +703,24 @@
       );
     }
 
-    const data = await api(url.toString());
+    // Background refresh must never hold pollBusy forever when
+    // a network request stalls. Foreground control retains its
+    // existing retry/acknowledgement semantics.
+    const controller = timeoutMs > 0 ? new AbortController() : null;
+    const timer = controller ? setTimeout(
+      () => controller.abort(), timeoutMs
+    ) : null;
 
-    renderState(data);
-
-    return data;
+    try {
+      const data = await api(
+        url.toString(),
+        controller ? { signal: controller.signal } : {}
+      );
+      renderState(data);
+      return data;
+    } finally {
+      if (timer !== null) clearTimeout(timer);
+    }
   }
 
   async function loadLatestPhoto() {
@@ -708,7 +738,7 @@
     pollBusy = true;
 
     try {
-      const data = await refreshView();
+      const data = await refreshView(null, 12000);
 
       // Only scheduled mode may replace the image. In control mode,
       // refresh operation state without overwriting the post-move photo.
@@ -724,7 +754,8 @@
     } catch (e) {
       status(
         "photoStatus",
-        "更新照片失敗：" + e.message,
+        "自動更新暫時失敗（下次會再試）：" +
+          (e?.name === "AbortError" ? "雲端查詢逾時" : e.message),
         "warn"
       );
     } finally {
