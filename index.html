@@ -385,7 +385,7 @@
 
   let lastPhotoKey = "";
   let lastPhotoLoadedAtMs = 0;
-  const FRONTEND_BUILD = "V5.2-AUTO-20261120";
+  const FRONTEND_BUILD = "V5.3-INTERVAL-SYNC-20261120";
 
   const fmt = value => {
     if (!value) return "尚無資料";
@@ -498,6 +498,13 @@
 
     if (remoteInterval === 10 || remoteInterval === 30) {
       intervalSeconds = remoteInterval;
+      // Keep the visible interval label in sync with confirmed cloud state.
+      // Previously this text was only written on initial connection.
+      status(
+        "scheduleStatus",
+        "目前拍攝間隔：" + intervalSeconds + " 秒",
+        "good"
+      );
     }
 
     $("interval10").classList.toggle(
