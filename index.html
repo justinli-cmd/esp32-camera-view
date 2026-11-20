@@ -700,7 +700,6 @@
       !connected ||
       pollBusy ||
       busy ||
-      mode !== "timed" ||
       document.hidden
     ) {
       return;
@@ -711,7 +710,11 @@
     try {
       const data = await refreshView();
 
-      await showPhoto(data);
+      // Only scheduled mode may replace the image. In control mode,
+      // refresh operation state without overwriting the post-move photo.
+      if (mode === "timed") {
+        await showPhoto(data);
+      }
 
       status(
         "connectionStatus",
@@ -817,6 +820,11 @@
         "伺服器尚未確認照片顯示，控制保持鎖定"
       );
     }
+
+    // Display-confirm response is the authoritative unlock. Update the
+    // status now instead of waiting for another page load / timer tick.
+    setText("operationStatus", "done");
+    status("photoStatus", "本次操作後照片已顯示，伺服器已確認", "good");
 
     return result;
   }
