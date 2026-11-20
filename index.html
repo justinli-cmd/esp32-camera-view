@@ -385,7 +385,7 @@
 
   let lastPhotoKey = "";
   let lastPhotoLoadedAtMs = 0;
-  const FRONTEND_BUILD = "V5.4-AUTO-PHOTO-RECOVERY-20261120";
+  const FRONTEND_BUILD = "V5.5-PAGEHIDE-CONTROL-CLOSE-20261120";
   const AUTO_PHOTO_RETRY_DELAYS_MS = [10000, 20000, 40000];
   const PASSIVE_RETRY_COOLDOWN_MS = 180000;
   let passiveRetryAfter = 0;
@@ -1672,6 +1672,34 @@
 
     $("largeMove").classList.add("active");
     $("smallMove").classList.remove("active");
+  });
+
+  // Best effort when the viewer leaves: request the EXISTING
+  // close_control operation, so the ESP32 can resume timed photos.
+  // Do not fake success or bypass V5 operation serialization.  The
+  // request may be dropped by the browser/network; server-side idle
+  // expiry is still needed for unattended fail-safe recovery.
+  window.addEventListener("pagehide", () => {
+    if (
+      !connected ||
+      !viewToken ||
+      mode !== "control" ||
+      serverMode !== "adjusting"
+    ) return;
+    try {
+      fetch(COMMAND_API, {
+        method: "POST",
+        cache: "no-store",
+        keepalive: true,
+        headers: {
+          "Content-Type": "application/json",
+          "x-view-token": viewToken
+        },
+        body: JSON.stringify({ action: "close_control" })
+      }).catch(() => {});
+    } catch (_) {
+      // A terminated page cannot report errors or safely retry.
+    }
   });
 
   document.addEventListener(
