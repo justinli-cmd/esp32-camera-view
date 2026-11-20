@@ -385,7 +385,11 @@
 
   let lastPhotoKey = "";
   let lastPhotoLoadedAtMs = 0;
-  const FRONTEND_BUILD = "V5.3-INTERVAL-SYNC-20261120";
+  const FRONTEND_BUILD = "V5.4-AUTO-PHOTO-RECOVERY-20261120";
+  const AUTO_PHOTO_RETRY_DELAYS_MS = [10000, 20000, 40000];
+  const PASSIVE_RETRY_COOLDOWN_MS = 180000;
+  let passiveRetryAfter = 0;
+  const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
   const fmt = value => {
     if (!value) return "尚無資料";
@@ -747,10 +751,43 @@
     try {
       const data = await refreshView(null, 12000);
 
-      // Only scheduled mode may replace the image. In control mode,
-      // refresh operation state without overwriting the post-move photo.
+      // Never overwrite an operation-specific photo with latest.jpg.
       if (mode === "timed") {
         await showPhoto(data);
+      } else if (
+        !controlReady &&
+        !busy &&
+        Date.now() >= passiveRetryAfter &&
+        data.can_move !== true &&
+        extractOperation(data)?.status === "failed" &&
+        extractOperationId(data)
+      ) {
+        // A failed control photo must not require repeated manual clicks.
+        // This recovery is photo-only, never a replay of the move command.
+        passiveRetryAfter = Date.now() + PASSIVE_RETRY_COOLDOWN_MS;
+        busy = true;
+        setMoveButtons(false);
+        $("retryPhotoBtn").disabled = true;
+        status(
+          "controlStatus",
+          "發現失敗的照片操作，正在自動恢復；不會再次轉動馬達。",
+          "warn"
+        );
+        try {
+          await waitForControlEntryPhoto(extractOperationId(data));
+          passiveRetryAfter = 0;
+        } catch (e) {
+          passiveRetryAfter = Date.now() + PASSIVE_RETRY_COOLDOWN_MS;
+          $("retryPhotoBtn").disabled = false;
+          status(
+            "controlStatus",
+            "自動恢復暫時失敗：" + e.message +
+              "。3 分鐘後會再檢查；方向控制保持鎖定。",
+            "warn"
+          );
+        } finally {
+          busy = false;
+        }
       }
 
       status(
@@ -775,9 +812,27 @@
     timeoutMs=360000
   ) {
     const start = Date.now();
+    let viewFailures = 0;
 
     while (Date.now() - start < timeoutMs) {
-      const data = await refreshView(operationId);
+      let data;
+      try {
+        data = await refreshView(operationId, 15000);
+        viewFailures = 0;
+      } catch (e) {
+        // A lost VIEW request is not evidence that a motor command failed.
+        // Continue reading the SAME operation; never resend a move.
+        viewFailures++;
+        status(
+          "motorStatus",
+          "雲端暫時無回應，正在重查原操作 #" +
+            operationId + "（第 " + viewFailures +
+            " 次）；不重新送馬達指令。",
+          "warn"
+        );
+        await sleep(Math.min(10000, 1500 * viewFailures));
+        continue;
+      }
 
       const op = extractOperation(data);
 
@@ -814,15 +869,25 @@
           "good"
         );
 
-        const displayed = await showPhoto(
-          data,
-          operationId
-        );
+        let displayed = false;
+        try {
+          displayed = await showPhoto(data, operationId);
+        } catch (e) {
+          // Signed image URL / browser download can fail transiently.
+          // Refresh the existing operation and signed URL, not the motor.
+          status(
+            "motorStatus",
+            "操作照片已上傳，下載暫時失敗，正在自動重新載入：" +
+              e.message,
+            "warn"
+          );
+          await sleep(2500);
+          continue;
+        }
 
         if (!displayed) {
-          throw new Error(
-            "本次操作照片未能正確載入，控制保持鎖定"
-          );
+          await sleep(1500);
+          continue;
         }
 
         return {
@@ -867,34 +932,135 @@
     return result;
   }
 
-  async function waitForControlEntryPhoto(
-    operationId
-  ) {
-    const result = await pollOperationPhoto(
-      operationId,
-      360000
-    );
+  async function confirmDisplayedSafely(operationId, photoPath) {
+    for (let i = 0; i < 3; i++) {
+      try {
+        await confirmDisplayed(operationId, photoPath);
+        return;
+      } catch (e) {
+        // POST response might be lost after the server already unlocked.
+        // Reconcile before resending the SAME photo acknowledgement.
+        let state = null;
+        try {
+          state = await refreshView(operationId, 12000);
+        } catch (_) {}
+        if (
+          state?.can_move === true &&
+          String(extractOperationId(state)) === String(operationId) &&
+          extractOperation(state)?.status === "done"
+        ) {
+          setText("operationStatus", "done");
+          status("photoStatus", "已確認伺服器完成解鎖", "good");
+          return;
+        }
+        if (i === 2) throw e;
+        await sleep((i + 1) * 3000);
+      }
+    }
+  }
 
-    await confirmDisplayed(
-      operationId,
-      result.photoPath
-    );
+  async function recoverAndConfirmPhoto(initialOperationId) {
+    let operationId = initialOperationId;
+    let retryCount = 0;
 
+    while (true) {
+      try {
+        const result = await pollOperationPhoto(operationId, 360000);
+        await confirmDisplayedSafely(operationId, result.photoPath);
+        activeOperationId = operationId;
+        return { ...result, operationId, retryCount };
+      } catch (e) {
+        // Only retry when the authoritative latest operation is FAILED.
+        // Timeouts, disconnections, pending uploads or unknown results
+        // must NOT generate another operation or replay a motor move.
+        const state = await refreshView(null, 15000);
+        const op = extractOperation(state);
+        const remoteMode = state.mode || state.state?.mode;
+        const currentId = extractOperationId(state);
+        if (
+          remoteMode === "timed" ||
+          !op ||
+          String(currentId) !== String(operationId) ||
+          op.status !== "failed" ||
+          ["close_control", "set_interval"].includes(op.kind)
+        ) {
+          throw e;
+        }
+        if (retryCount >= AUTO_PHOTO_RETRY_DELAYS_MS.length) {
+          throw new Error(
+            "已自動補拍 " + retryCount +
+            " 次但仍失敗；3 分鐘後會再嘗試。最後狀態：" +
+            (op.error_message || e.message)
+          );
+        }
+
+        const delayMs = AUTO_PHOTO_RETRY_DELAYS_MS[retryCount];
+        status(
+          "controlStatus",
+          "照片操作 #" + operationId + " 已失敗，" +
+            Math.round(delayMs / 1000) +
+            " 秒後自動補拍（第 " + (retryCount + 1) +
+            "/" + AUTO_PHOTO_RETRY_DELAYS_MS.length +
+            " 次）；不重複轉動馬達。",
+          "warn"
+        );
+        setMoveButtons(false);
+        $("retryPhotoBtn").disabled = true;
+        await sleep(delayMs);
+
+        // Check AGAIN immediately before the potentially mutating POST.
+        // If another viewer has already recovered it, do not duplicate.
+        const latest = await refreshView(null, 15000);
+        const latestOp = extractOperation(latest);
+        const latestId = extractOperationId(latest);
+        const latestMode = latest.mode || latest.state?.mode;
+        if (
+          !connected ||
+          latestMode === "timed" ||
+          String(latestId) !== String(operationId) ||
+          latestOp?.status !== "failed"
+        ) {
+          throw new Error(
+            "雲端操作狀態已改變；未送出重複補拍指令，請重新連線確認。"
+          );
+        }
+
+        // Server retry_photo is PHOTO ONLY. Never send "move" here.
+        const retry = await command("retry_photo");
+        const retryId = extractOperationId(retry);
+        if (!retryId) {
+          throw new Error(
+            "補拍命令回應不明；為避免重複指令，先停止自動補拍。"
+          );
+        }
+        retryCount++;
+        operationId = retryId;
+        activeOperationId = retryId;
+        status(
+          "motorStatus",
+          "自動補拍操作 #" + retryId +
+            " 已建立，正在等待新照片（馬達不會再次移動）。",
+          "warn"
+        );
+      }
+    }
+  }
+
+  async function waitForControlEntryPhoto(operationId) {
+    await recoverAndConfirmPhoto(operationId);
     controlReady = true;
-
     setMoveButtons(true);
-
     $("closeControlBtn").disabled = false;
     $("retryPhotoBtn").disabled = true;
-
     serverMode = "adjusting";
-
     status(
       "controlStatus",
-      "進入控制模式的當下照片已顯示；現在可以調整角度。",
+      "照片已自動取得、顯示並確認；方向控制已解鎖。",
       "good"
     );
-  }  async function startViewer() {
+  }
+
+  async function startViewer() {
     const input = $("token");
 
     viewToken = input.value.trim();
@@ -962,14 +1128,29 @@
             "已恢復既有控制工作階段；上一張操作照片已確認。",
             "good"
           );
-        } else if (op?.status === "failed") {
-          $("retryPhotoBtn").disabled = false;
-
+        } else if (op?.status === "failed" && activeOperationId) {
+          busy = true;
+          $("retryPhotoBtn").disabled = true;
           status(
             "controlStatus",
-            "偵測到未完成操作；方向控制保持鎖定。",
+            "發現先前失敗的照片操作，正在自動補拍；不重複移動馬達。",
             "warn"
           );
+          try {
+            await waitForControlEntryPhoto(activeOperationId);
+            passiveRetryAfter = 0;
+          } catch (resumeError) {
+            passiveRetryAfter = Date.now() + PASSIVE_RETRY_COOLDOWN_MS;
+            $("retryPhotoBtn").disabled = false;
+            status(
+              "controlStatus",
+              "自動補拍暫時失敗：" + resumeError.message +
+                "。將於 3 分鐘後繼續自動檢查。",
+              "warn"
+            );
+          } finally {
+            busy = false;
+          }
         } else if (activeOperationId) {
           status(
             "controlStatus",
@@ -982,14 +1163,14 @@
               activeOperationId
             );
           } catch (resumeError) {
+            passiveRetryAfter = Date.now() + PASSIVE_RETRY_COOLDOWN_MS;
             $("retryPhotoBtn").disabled = false;
 
             status(
               "controlStatus",
-              "恢復操作未完成：" +
-              resumeError.message +
-              "。方向控制保持鎖定。",
-              "bad"
+              "恢復操作未完成：" + resumeError.message +
+                "。方向控制保持鎖定，之後會自動檢查。",
+              "warn"
             );
           }
         }
@@ -1126,12 +1307,9 @@
       );
 
       setMoveButtons(false);
-
-      $("retryPhotoBtn").disabled =
-        !activeOperationId;
-
-      $("openControlBtn").disabled =
-        Boolean(activeOperationId);
+      passiveRetryAfter = Date.now() + PASSIVE_RETRY_COOLDOWN_MS;
+      $("retryPhotoBtn").disabled = !activeOperationId;
+      $("openControlBtn").disabled = Boolean(activeOperationId);
 
     } finally {
       busy = false;
@@ -1199,17 +1377,9 @@
         "指令已進入佇列，等待馬達完成、拍照及上傳…"
       );
 
-      const result = await pollOperationPhoto(
-        activeOperationId,
-        360000
-      );
+      await recoverAndConfirmPhoto(activeOperationId);
 
       const beforeConfirm = performance.now();
-
-      await confirmDisplayed(
-        activeOperationId,
-        result.photoPath
-      );
 
       const totalMs = Math.round(
         performance.now() - start
@@ -1242,6 +1412,7 @@
 
     } catch (e) {
       $("retryPhotoBtn").disabled = false;
+      passiveRetryAfter = Date.now() + PASSIVE_RETRY_COOLDOWN_MS;
 
       status(
         "motorStatus",
@@ -1290,15 +1461,7 @@
 
       activeOperationId = retryId;
 
-      const result = await pollOperationPhoto(
-        retryId,
-        360000
-      );
-
-      await confirmDisplayed(
-        retryId,
-        result.photoPath
-      );
+      await recoverAndConfirmPhoto(retryId);
 
       controlReady = true;
 
@@ -1314,6 +1477,7 @@
 
     } catch (e) {
       $("retryPhotoBtn").disabled = false;
+      passiveRetryAfter = Date.now() + PASSIVE_RETRY_COOLDOWN_MS;
 
       status(
         "motorStatus",
